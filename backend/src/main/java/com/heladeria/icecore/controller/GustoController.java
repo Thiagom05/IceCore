@@ -50,10 +50,4 @@ public class GustoController {
     public ResponseEntity<Gusto> toggleStock(@PathVariable Long id) {
         return ResponseEntity.ok(gustoService.toggleStock(id));
     }
-
-    // PUT /api/gustos/{id} -> Actualiza datos generales (Nombre, Desc, Categoria)
-    @PutMapping("/{id}")
-    public ResponseEntity<Gusto> update(@PathVariable Long id, @RequestBody Gusto gusto) {
-        return ResponseEntity.ok(gustoService.update(id, gusto));
-    }
 }

@@ -37,4 +37,9 @@ public class PedidoController {
     public ResponseEntity<Pedido> updateEstado(@PathVariable Long id, @RequestParam String estado) {
         return ResponseEntity.ok(pedidoService.updateEstado(id, estado));
     }
+
+    @PatchMapping("/{id}/repartidor")
+    public ResponseEntity<Pedido> updateRepartidor(@PathVariable Long id, @RequestParam String nombre) {
+        return ResponseEntity.ok(pedidoService.updateRepartidor(id, nombre));
+    }
 }

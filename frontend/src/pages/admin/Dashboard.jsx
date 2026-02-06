@@ -25,6 +25,8 @@ export default function Dashboard() {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [currentProduct, setCurrentProduct] = useState(null);
 
+    const REPARTIDORES = ["Luis", "Claudio", "Matias"];
+
     useEffect(() => {
         fetchData();
         // Polling para pedidos nuevos cada 30 seg
@@ -135,6 +137,21 @@ export default function Dashboard() {
         } catch (error) {
             console.error("Error actualizando estado:", error);
             fetchPedidos();
+        }
+    };
+
+    const handleRepartidorChange = async (pedidoId, nuevoRepartidor) => {
+        try {
+            // Actualización optimista (para que se vea instantáneo en pantalla)
+            setPedidos(pedidos.map(p => p.id === pedidoId ? { ...p, repartidor: nuevoRepartidor } : p));
+
+            // Llamada al backend
+            await api.patch(`/pedidos/${pedidoId}/repartidor`, null, {
+                params: { nombre: nuevoRepartidor }
+            });
+        } catch (error) {
+            console.error("Error asignando repartidor:", error);
+            fetchPedidos(); // Si falla, recargamos para ver el dato real
         }
     };
 
@@ -404,6 +421,21 @@ export default function Dashboard() {
                                                                     <option value="LISTO">Listo</option>
                                                                     <option value="ENTREGADO">Entregado</option>
                                                                     <option value="CANCELADO">Cancelado</option>
+                                                                </select>
+                                                            </div>
+                                                            <div className="w-full mt-4 border-t pt-2"> {/* Agregamos un separador y margen */}
+                                                                <label className="text-xs text-gray-400 block mb-1">Asignar Repartidor:</label>
+                                                                <select
+                                                                    value={pedido.repartidor || ""} // Si es null, muestra la opción por defecto
+                                                                    onChange={(e) => handleRepartidorChange(pedido.id, e.target.value)}
+                                                                    className={`w-full text-sm border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 ${pedido.repartidor ? 'bg-green-50 text-green-800 font-bold' : 'bg-gray-50'}`}
+                                                                >
+                                                                    <option value="">-- Sin asignar --</option>
+                                                                    {REPARTIDORES.map((repa) => (
+                                                                        <option key={repa} value={repa}>
+                                                                            {repa}
+                                                                        </option>
+                                                                    ))}
                                                                 </select>
                                                             </div>
                                                         </div>

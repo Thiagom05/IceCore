@@ -1,5 +1,9 @@
 package com.heladeria.icecore.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.heladeria.icecore.dto.ItemPedidoDTO;
 import com.heladeria.icecore.dto.PedidoDTO;
 import com.heladeria.icecore.entity.Gusto;
@@ -9,9 +13,6 @@ import com.heladeria.icecore.entity.TipoProducto;
 import com.heladeria.icecore.repository.GustoRepository;
 import com.heladeria.icecore.repository.PedidoRepository;
 import com.heladeria.icecore.repository.TipoProductoRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -51,6 +52,20 @@ public class PedidoService {
             // Buscamos el tipo de producto en la BD
             TipoProducto tipo = tipoProductoRepository.findById(itemDTO.getTipoProductoId())
                     .orElseThrow(() -> new RuntimeException("Tipo de producto no encontrado"));
+
+            if ("1/4 KILO".equalsIgnoreCase(tipo.getNombre())) {
+                if (itemDTO.getCantidad() < 2) {
+                    throw new RuntimeException("Error: El producto " + tipo.getNombre()
+                            + " requiere al menos 2 unidades.");
+                }
+            }
+
+            if (!tipo.getEsPorPeso()) {
+                if (itemDTO.getCantidad() < 5) {
+                    throw new RuntimeException("Error: El producto " + tipo.getNombre()
+                            + " requiere al menos 5 unidades.");
+                }
+            }
 
             // --- LÓGICA DE NEGOCIO PRINCIPAL ---
             // Validamos que la cantidad de gustos elegidos no supere la capacidad del pote
@@ -100,6 +115,20 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado id: " + id));
         pedido.setEstado(nuevoEstado);
+        return pedidoRepository.save(pedido);
+    }
+
+    public Pedido updateRepartidor(Long id, String nombreRepartidor) {
+        Pedido pedido = pedidoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Pedido no encontrado id: " + id));
+
+        pedido.setRepartidor(nombreRepartidor);
+
+        // Si asignan repartidor, pasamos el estado a "EN_CAMINO"
+        if (nombreRepartidor != null && !nombreRepartidor.isEmpty()) {
+            pedido.setEstado("EN_CAMINO");
+        }
+
         return pedidoRepository.save(pedido);
     }
 }
