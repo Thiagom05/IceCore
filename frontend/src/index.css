@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+/* Importar fuentes desde Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,100..900;1,100..900&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
+
+@theme {
+  /* Paleta Pura Vida - Extraída de Instagram */
+
+  /* Primary: Menta / Tiffany Blue (Ref: Highlight 'Tortas') */
+  --color-primary-50: #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-200: #99f6e4;
+  --color-primary-300: #5eead4;
+  --color-primary-400: #2dd4bf;
+  --color-primary-500: #14b8a6;
+  --color-primary-600: #0d9488;
+  --color-primary-700: #0f766e;
+  --color-primary-800: #115e59;
+  --color-primary-900: #134e4a;
+
+  /* Secondary: Marrón / Café con Leche (Ref: Highlight 'Gustos') */
+  --color-secondary-50: #fdf8f6;
+  --color-secondary-100: #f2e8e5;
+  --color-secondary-200: #eaddd7;
+  --color-secondary-300: #e0cec7;
+  --color-secondary-400: #d2bab0;
+  --color-secondary-500: #a1887f;
+  /* Color base aproximado */
+  --color-secondary-600: #8d746b;
+  --color-secondary-700: #796359;
+  --color-secondary-800: #655248;
+  --color-secondary-900: #514038;
+
+  /* Accent: Salmón / Rosa (Ref: Highlight 'Paletas') */
+  --color-accent-500: #ff9e9e;
+
+  /* Configurar Raleway como la fuente Sans (por defecto en Tailwind) */
+  --font-sans: "Raleway", sans-serif;
+
+  /* Configurar Bitter como fuente Serif (para títulos si se desea) */
+  --font-serif: "Bitter", serif;
+}
+
+@layer base {
+  body {
+    /* Usar Raleway por defecto */
+    @apply antialiased bg-gray-50 text-gray-900 font-sans;
+  }
+
+  /* Aplicar Bitter a los encabezados para darles estilo */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-serif;
+  }
+}
