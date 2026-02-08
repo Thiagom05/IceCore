@@ -54,10 +54,10 @@ function App() {
 
                         {/* Redes / Iconos */}
                         <div className="flex gap-4">
-                          <a href="#" className="p-3 rounded-full bg-white/5 hover:bg-white hover:text-black transition-all group">
+                          <a href="#" className="p-3 rounded-full bg-white/5 hover:bg-white hover:text-[#2C1B18] transition-all group">
                             <Instagram className="w-5 h-5" />
                           </a>
-                          <a href="#" className="p-3 rounded-full bg-white/5 hover:bg-white hover:text-black transition-all group">
+                          <a href="#" className="p-3 rounded-full bg-white/5 hover:bg-white hover:text-[#2C1B18] transition-all group">
                             <MapPin className="w-5 h-5" />
                           </a>
                         </div>

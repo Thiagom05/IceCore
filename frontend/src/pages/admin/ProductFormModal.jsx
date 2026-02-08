@@ -19,6 +19,13 @@ export default function ProductFormModal({ isOpen, onClose, productToEdit, onSav
                 maxGustos: productToEdit.maxGustos,
                 esPorPeso: productToEdit.esPorPeso
             });
+        } else {
+            setFormData({
+                nombre: '',
+                precio: '',
+                maxGustos: 0,
+                esPorPeso: false
+            });
         }
     }, [productToEdit, isOpen]);
 
@@ -28,7 +35,11 @@ export default function ProductFormModal({ isOpen, onClose, productToEdit, onSav
         e.preventDefault();
         setLoading(true);
         try {
-            await api.put(`/tipos-producto/${productToEdit.id}`, formData);
+            if (productToEdit) {
+                await api.put(`/tipos-producto/${productToEdit.id}`, formData);
+            } else {
+                await api.post('/tipos-producto', formData);
+            }
             onSave();
             onClose();
         } catch (error) {
@@ -41,28 +52,28 @@ export default function ProductFormModal({ isOpen, onClose, productToEdit, onSav
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-fade-in">
-                <div className="bg-primary-600 px-6 py-4 flex justify-between items-center">
-                    <h3 className="text-white font-bold text-lg">Editar Producto</h3>
-                    <button onClick={onClose} className="text-white/80 hover:text-white transition">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in border border-gray-100">
+                <div className="bg-[#2C1B18] px-8 py-6 flex justify-between items-center">
+                    <h3 className="text-white font-black text-xl tracking-tight">{productToEdit ? 'Editar Producto' : 'Nuevo Producto'}</h3>
+                    <button onClick={onClose} className="text-white/80 hover:text-white transition p-1 hover:bg-white/10 rounded-full">
                         <X size={24} />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                    <div className="group">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">Nombre del Producto</label>
                         <input
                             type="text"
                             required
                             value={formData.nombre}
                             onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                            className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 p-2 border"
+                            className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold placeholder-gray-400 focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg"
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Precio ($)</label>
+                    <div className="group">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">Precio ($)</label>
                         <input
                             type="number"
                             required
@@ -70,43 +81,49 @@ export default function ProductFormModal({ isOpen, onClose, productToEdit, onSav
                             step="0.01"
                             value={formData.precio}
                             onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
-                            className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 p-2 border"
+                            className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-black text-xl placeholder-gray-400 focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg"
                         />
                     </div>
 
-                    <div className="flex gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Max. Sabores</label>
+                    <div className="flex gap-6">
+                        <div className="flex-1 group">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">Max. Sabores</label>
                             <input
                                 type="number"
                                 required
                                 min="0"
                                 value={formData.maxGustos}
                                 onChange={(e) => setFormData({ ...formData, maxGustos: e.target.value })}
-                                className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 p-2 border"
+                                className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold placeholder-gray-400 focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg"
                             />
                         </div>
                         <div className="flex-1">
-                            {/* Es Por Peso: Read only for now unless logic changes */}
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo Venta</label>
-                            <div className="p-2 bg-gray-100 rounded text-sm text-gray-600">
-                                {formData.esPorPeso ? 'Por Pote' : 'Por Unidad'}
+                            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">Tipo Venta</label>
+                            <div className="relative">
+                                <select
+                                    value={formData.esPorPeso}
+                                    onChange={(e) => setFormData({ ...formData, esPorPeso: e.target.value === 'true' })}
+                                    className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg appearance-none cursor-pointer"
+                                >
+                                    <option value="false">Por Unidad</option>
+                                    <option value="true">Por Pote</option>
+                                </select>
                             </div>
                         </div>
                     </div>
 
-                    <div className="pt-4 flex justify-end gap-3">
+                    <div className="pt-6 flex justify-end gap-3 border-t border-gray-100 mt-4">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                            className="px-6 py-3 text-xs font-bold uppercase tracking-widest text-text-secondary hover:text-[#2C1B18] hover:bg-gray-50 rounded-xl transition"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium shadow-sm"
+                            className="px-8 py-3 bg-[#2C1B18] text-white rounded-xl hover:bg-black hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#2C1B18]/20 text-xs font-bold uppercase tracking-widest"
                         >
                             {loading ? 'Guardando...' : 'Guardar Cambios'}
                         </button>

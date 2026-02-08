@@ -33,7 +33,7 @@ export default function Navbar() {
                         <Link to="/carrito" className="p-2 hover:bg-white/10 rounded-full transition relative">
                             <ShoppingCart className="h-6 w-6" />
                             {cartCount > 0 && (
-                                <span className="absolute top-0 right-0 bg-white text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
+                                <span className="absolute top-0 right-0 bg-white text-[#2C1B18] text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
                                     {cartCount}
                                 </span>
                             )}

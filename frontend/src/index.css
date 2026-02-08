@@ -10,12 +10,12 @@
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f9f9f9;
   /* Gris muy tenue para alternar secciones */
-  --color-bg-inverse: #111111;
-  /* Fondo oscuro para contraste */
+  --color-bg-inverse: #2C1B18;
+  /* Chocolate Oscuro Premium */
 
   /* Textos */
-  --color-text-primary: #111111;
-  /* Negro casi puro para lectura */
+  --color-text-primary: #2C1B18;
+  /* Chocolate Oscuro para lectura */
   --color-text-secondary: #666666;
   /* Gris medio para subtítulos */
   --color-text-inverse: #ffffff;
@@ -23,11 +23,11 @@
 
   /* Bordes y Líneas */
   --color-border-light: #e5e5e5;
-  --color-border-dark: #111111;
+  --color-border-dark: #2C1B18;
 
   /* Accent (Acentos sutiles) */
-  --color-accent: #000000;
-  /* Acentos en negro fuerte */
+  --color-accent: #2C1B18;
+  /* Acentos en Chocolate */
 
   /* Configurar Inter como fuente Sans principal */
   --font-sans: "Inter", sans-serif;

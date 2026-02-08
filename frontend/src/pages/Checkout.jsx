@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
+import { CreditCard, Banknote, Landmark, Loader2, ArrowLeft } from 'lucide-react';
 
 export default function Checkout() {
     const { cart, cartTotal, clearCart } = useCart();
@@ -20,7 +21,11 @@ export default function Checkout() {
     const [loading, setLoading] = useState(false);
 
     if (cart.length === 0) {
-        return <div className="p-10 text-center">No hay items en el carrito para pagar.</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center text-text-secondary">
+                <p>No hay items en el carrito para pagar.</p>
+            </div>
+        );
     }
 
     const handleChange = (e) => {
@@ -29,7 +34,6 @@ export default function Checkout() {
 
     const handleMercadoPago = async () => {
         setLoading(true);
-        // Aquí llamaremos al backend para crear la preferencia
         try {
             const res = await api.post('/payments/create_preference', cart);
             window.location.href = res.data.init_point;
@@ -42,11 +46,10 @@ export default function Checkout() {
     };
 
     const saveOrder = async (metodo) => {
-        // Mapear carrito a DTO
         const itemsDTO = cart.map(item => ({
             tipoProductoId: item.product.id,
             gustoIds: item.gustos ? item.gustos.map(g => g.id) : [],
-            cantidad: 1 // Asumimos 1 por item en el array del carrito
+            cantidad: 1
         }));
 
         const pedidoDTO = {
@@ -65,10 +68,8 @@ export default function Checkout() {
     const handleWhatsAppOrder = async (metodo) => {
         setLoading(true);
         try {
-            // 1. Guardar en Base de Datos
             const pedidoGuardado = await saveOrder(metodo);
 
-            // 2. Construir mensaje de WhatsApp
             let mensaje = `Hola! Quiero realizar un pedido en Pura Vida (Pedido #${pedidoGuardado.id})\n\n`;
             mensaje += `*Cliente:* ${formData.nombre}\n`;
             mensaje += `*Dirección:* ${formData.direccion}\n`;
@@ -87,7 +88,6 @@ export default function Checkout() {
             mensaje += `*Forma de Pago:* ${metodo === 'transferencia' ? 'Transferencia (Envío comprobante)' : 'Efectivo contra entrega'}\n`;
             if (formData.aclaraciones) mensaje += `*Aclaraciones:* ${formData.aclaraciones}`;
 
-            // 3. Redirigir
             const url = `https://wa.me/5492262485095?text=${encodeURIComponent(mensaje)}`;
 
             clearCart();
@@ -113,144 +113,154 @@ export default function Checkout() {
         if (paymentMethod === 'mercadopago') {
             handleMercadoPago();
         } else {
-            // Efectivo o Transferencia
             await handleWhatsAppOrder(paymentMethod);
         }
     };
 
+    const InputField = ({ label, name, type = "text", required = false, placeholder }) => (
+        <div className="group">
+            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">{label}</label>
+            <input
+                required={required}
+                type={type}
+                name={name}
+                value={formData[name]}
+                onChange={handleChange}
+                placeholder={placeholder}
+                className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg"
+            />
+        </div>
+    );
+
+    const PaymentOption = ({ value, label, subLabel, icon: Icon }) => (
+        <label className={`
+            cursor-pointer relative p-6 rounded-2xl border-2 transition-all duration-300 flex items-start gap-4 group
+            ${paymentMethod === value
+                ? 'border-[#2C1B18] bg-[#2C1B18] text-white shadow-xl shadow-[#2C1B18]/20 transform scale-[1.02]'
+                : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
+            }
+        `}>
+            <input
+                type="radio"
+                name="payment"
+                value={value}
+                checked={paymentMethod === value}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="sr-only"
+            />
+            <div className={`p-3 rounded-full ${paymentMethod === value ? 'bg-white/10' : 'bg-gray-100 group-hover:bg-white'} transition-colors`}>
+                <Icon className={`w-6 h-6 ${paymentMethod === value ? 'text-white' : 'text-gray-400 group-hover:text-[#2C1B18]'}`} />
+            </div>
+            <div>
+                <span className={`block font-bold text-lg mb-1 ${paymentMethod === value ? 'text-white' : 'text-[#2C1B18]'}`}>{label}</span>
+                <span className={`block text-xs font-medium leading-relaxed ${paymentMethod === value ? 'text-white/70' : 'text-text-secondary'}`}>{subLabel}</span>
+            </div>
+        </label>
+    );
+
     return (
-        <div className="max-w-3xl mx-auto px-4 py-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Finalizar Compra</h2>
-
-            <form onSubmit={handleSubmit} className="space-y-8">
-                {/* 1. Datos del Cliente */}
-                <div className="bg-white p-6 rounded-xl shadow-md">
-                    <h3 className="text-xl font-semibold mb-4 border-b pb-2">1. Datos de Envío</h3>
-                    <div className="grid grid-cols-1 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Nombre Completo</label>
-                            <input
-                                required
-                                type="text"
-                                name="nombre"
-                                value={formData.nombre}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 p-2 border"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Teléfono / WhatsApp</label>
-                            <input
-                                required
-                                type="tel"
-                                name="telefono"
-                                value={formData.telefono}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 p-2 border"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Dirección de Entrega</label>
-                            <input
-                                required
-                                type="text"
-                                name="direccion"
-                                value={formData.direccion}
-                                onChange={handleChange}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 p-2 border"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Aclaraciones (Opcional)</label>
-                            <textarea
-                                name="aclaraciones"
-                                value={formData.aclaraciones}
-                                onChange={handleChange}
-                                rows="2"
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 p-2 border"
-                                placeholder="Ej: Timbre no anda, casa esquina verde..."
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* 2. Método de Pago */}
-                <div className="bg-white p-6 rounded-xl shadow-md">
-                    <h3 className="text-xl font-semibold mb-4 border-b pb-2">2. Forma de Pago</h3>
-                    <div className="space-y-4">
-                        {/* Mercado Pago */}
-                        <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${paymentMethod === 'mercadopago' ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'hover:bg-gray-50'}`}>
-                            <input
-                                type="radio"
-                                name="payment"
-                                value="mercadopago"
-                                checked={paymentMethod === 'mercadopago'}
-                                onChange={(e) => setPaymentMethod(e.target.value)}
-                                className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                            />
-                            <div className="ml-3">
-                                <span className="block text-sm font-medium text-gray-900">Mercado Pago</span>
-                                <span className="block text-xs text-gray-500">Tarjetas de Débito, Crédito o Dinero en cuenta.</span>
-                            </div>
-                            <img src="/src/assets/mercadopago.webp" alt="MP" className="h-8 ml-auto" />
-                        </label>
-
-                        {/* Transferencia */}
-                        <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${paymentMethod === 'transferencia' ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200' : 'hover:bg-gray-50'}`}>
-                            <input
-                                type="radio"
-                                name="payment"
-                                value="transferencia"
-                                checked={paymentMethod === 'transferencia'}
-                                onChange={(e) => setPaymentMethod(e.target.value)}
-                                className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500"
-                            />
-                            <div className="ml-3">
-                                <span className="block text-sm font-medium text-gray-900">Transferencia Bancaria</span>
-                                <span className="block text-xs text-gray-500">Alias: ICE.CORE.HELADOS / CBU: 0000123456789</span>
-                                {paymentMethod === 'transferencia' && (
-                                    <div className="mt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded">
-                                        Al confirmar, se abrirá WhatsApp para que envíes el comprobante.
-                                    </div>
-                                )}
-                            </div>
-                        </label>
-
-                        {/* Efectivo */}
-                        <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${paymentMethod === 'efectivo' ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'hover:bg-gray-50'}`}>
-                            <input
-                                type="radio"
-                                name="payment"
-                                value="efectivo"
-                                checked={paymentMethod === 'efectivo'}
-                                onChange={(e) => setPaymentMethod(e.target.value)}
-                                className="h-4 w-4 text-green-600 border-gray-300 focus:ring-green-500"
-                            />
-                            <div className="ml-3">
-                                <span className="block text-sm font-medium text-gray-900">Efectivo contra entrega</span>
-                                <span className="block text-xs text-gray-500">Pagas al recibir tu pedido.</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                {/* Resumen Total */}
-                <div className="flex items-center justify-between bg-gray-800 text-white p-6 rounded-xl shadow-lg">
-                    <span className="text-xl">Total a Pagar:</span>
-                    <span className="text-3xl font-bold">${cartTotal.toLocaleString('es-AR')}</span>
-                </div>
-
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className={`w-full py-4 px-6 rounded-xl font-bold text-white text-lg transition shadow-md ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 hover:shadow-lg scale-100 hover:scale-[1.01]'}`}
-                >
-                    {loading ? 'Procesando...' :
-                        paymentMethod === 'mercadopago' ? 'Pagar con Mercado Pago' :
-                            paymentMethod === 'transferencia' ? 'Confirmar y Enviar Comprobante' :
-                                'Confirmar Pedido'}
+        <div className="min-h-screen bg-bg-primary pt-24 pb-16 px-6">
+            <div className="max-w-3xl mx-auto">
+                <button onClick={() => navigate('/carrito')} className="flex items-center gap-2 text-text-secondary hover:text-[#2C1B18] mb-8 group transition-colors">
+                    <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                    <span className="font-bold underline underline-offset-4 cursor-pointer">Volver al Carrito</span>
                 </button>
-            </form>
+
+                <h1 className="text-4xl font-black text-[#2C1B18] tracking-tighter mb-2">FINALIZAR PEDIDO</h1>
+                <p className="text-text-secondary mb-12">Completa tus datos para recibir tu pedido.</p>
+
+                <form onSubmit={handleSubmit} className="space-y-12 animate-fade-in-up">
+                    {/* 1. Datos del Cliente */}
+                    <section>
+                        <h3 className="text-xl font-bold text-[#2C1B18] mb-6 flex items-center gap-3">
+                            <span className="w-8 h-8 rounded-full bg-[#2C1B18] text-white flex items-center justify-center text-sm">1</span>
+                            Datos de Envío
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <InputField label="Nombre Completo" name="nombre" required placeholder="Tu nombre" />
+                            <InputField label="Teléfono / WhatsApp" name="telefono" type="tel" required placeholder="Para coordinar la entrega" />
+                            <div className="md:col-span-2">
+                                <InputField label="Dirección de Entrega" name="direccion" required placeholder="Calle, número, piso..." />
+                            </div>
+                            <div className="md:col-span-2">
+                                <div className="group">
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">Aclaraciones (Opcional)</label>
+                                    <textarea
+                                        name="aclaraciones"
+                                        value={formData.aclaraciones}
+                                        onChange={handleChange}
+                                        rows="2"
+                                        className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg resize-none"
+                                        placeholder="Ej: Timbre no anda, casa esquina verde..."
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* 2. Método de Pago */}
+                    <section>
+                        <h3 className="text-xl font-bold text-[#2C1B18] mb-6 flex items-center gap-3">
+                            <span className="w-8 h-8 rounded-full bg-[#2C1B18] text-white flex items-center justify-center text-sm">2</span>
+                            Forma de Pago
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <PaymentOption
+                                value="mercadopago"
+                                label="Mercado Pago"
+                                subLabel="Tarjetas, Débito o Dinero en cuenta."
+                                icon={CreditCard}
+                            />
+                            <PaymentOption
+                                value="transferencia"
+                                label="Transferencia"
+                                subLabel="Te enviaremos los datos por WhatsApp."
+                                icon={Landmark}
+                            />
+                            <PaymentOption
+                                value="efectivo"
+                                label="Efectivo"
+                                subLabel="Abonás al recibir tu pedido."
+                                icon={Banknote}
+                            />
+                        </div>
+                    </section>
+
+                    {/* Resumen y Botón */}
+                    <div className="pt-8 border-t border-gray-200">
+                        <div className="flex justify-between items-end mb-8">
+                            <div>
+                                <p className="text-text-secondary text-sm mb-1">Total a Pagar</p>
+                                <p className="text-4xl font-black text-[#2C1B18] tracking-tight">${cartTotal.toLocaleString('es-AR')}</p>
+                            </div>
+                            <span className="text-xs text-text-secondary bg-gray-100 px-3 py-1 rounded-full">{cart.length} items</span>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className={`
+                                w-full py-5 px-6 rounded-2xl font-bold text-white text-lg transition-all shadow-xl
+                                ${loading
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-[#2C1B18] hover:bg-black hover:scale-[1.01] hover:shadow-2xl shadow-[#2C1B18]/20'}
+                                flex items-center justify-center gap-3 cursor-pointer
+                            `}
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="animate-spin w-6 h-6" />
+                                    Procesando...
+                                </>
+                            ) : (
+                                <>
+                                    Confirmar Pedido
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 }

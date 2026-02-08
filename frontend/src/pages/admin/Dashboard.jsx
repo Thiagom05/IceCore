@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../lib/api';
-import { LogOut, Plus, Search, CheckCircle, XCircle, Edit2, IceCream, Package, ShoppingBag, ChevronDown, ChevronUp } from 'lucide-react';
+import { LogOut, Plus, Search, CheckCircle, XCircle, Edit2, IceCream, Package, ShoppingBag, Truck, Calendar, Clock, DollarSign, User, MapPin } from 'lucide-react';
 import GustoFormModal from './GustoFormModal';
 import ProductFormModal from './ProductFormModal';
 
@@ -126,6 +126,7 @@ export default function Dashboard() {
     };
 
     // --- LOGICA PRODUCTOS ---
+    const handleCreateProduct = () => { setCurrentProduct(null); setIsProductModalOpen(true); };
     const handleEditProduct = (prod) => { setCurrentProduct(prod); setIsProductModalOpen(true); };
 
     // --- LOGICA PEDIDOS ---
@@ -157,28 +158,51 @@ export default function Dashboard() {
 
     const StatusBadge = ({ status }) => {
         const styles = {
-            'PENDIENTE': 'bg-yellow-100 text-yellow-800',
-            'EN_PREPARACION': 'bg-blue-100 text-blue-800',
-            'LISTO': 'bg-purple-100 text-purple-800',
-            'ENTREGADO': 'bg-green-100 text-green-800',
-            'CANCELADO': 'bg-red-100 text-red-800',
+            'PENDIENTE': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+            'EN_PREPARACION': 'bg-blue-50 text-blue-700 border-blue-200',
+            'LISTO': 'bg-purple-50 text-purple-700 border-purple-200',
+            'ENTREGADO': 'bg-green-50 text-green-700 border-green-200',
+            'CANCELADO': 'bg-red-50 text-red-700 border-red-200',
+        };
+        const labels = {
+            'PENDIENTE': 'Pendiente',
+            'EN_PREPARACION': 'Preparando',
+            'LISTO': 'Listo',
+            'ENTREGADO': 'Entregado',
+            'CANCELADO': 'Cancelado',
         };
         return (
-            <span className={`px-2 py-1 rounded-full text-xs font-bold ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
-                {status ? status.replace('_', ' ') : 'UNKNOWN'}
+            <span className={`px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider border ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
+                {labels[status] || status}
             </span>
         );
     };
 
-    // --- RENDER ---
     const filteredGustos = gustos.filter(g =>
         g.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         g.categoria.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const TabButton = ({ id, icon: Icon, label, liveCount }) => (
+        <button
+            onClick={() => setActiveTab(id)}
+            className={`
+                flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm transition-all duration-300
+                ${activeTab === id
+                    ? 'bg-[#2C1B18] text-white shadow-lg shadow-[#2C1B18]/20 translate-y-[-1px]'
+                    : 'bg-white text-text-secondary hover:bg-gray-50 hover:text-[#2C1B18]'}
+            `}
+        >
+            <Icon size={18} /> {label}
+            {liveCount && <span className="ml-1 flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            </span>}
+        </button>
+    );
+
     return (
-        <div className="min-h-screen bg-gray-100 font-sans">
-            {/* Modales */}
+        <div className="min-h-screen bg-bg-primary font-sans text-text-primary">
             <GustoFormModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -192,96 +216,99 @@ export default function Dashboard() {
                 onSave={fetchProductos}
             />
 
-            {/* Navbar */}
-            <nav className="bg-white shadow-md sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-16">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-primary-600 text-white p-2 rounded-lg font-bold">PV</div>
+            {/* Navbar Minimalista */}
+            <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-20 border-b border-gray-100">
+                <div className="max-w-7xl mx-auto px-6">
+                    <div className="flex justify-between h-20 items-center">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-[#2C1B18] text-white rounded-full flex items-center justify-center font-bold shadow-md shadow-[#2C1B18]/10">PV</div>
                             <div>
-                                <h1 className="text-xl font-bold text-gray-800">Panel de Control</h1>
-                                <p className="text-xs text-gray-500">Hola, {user?.username || 'Admin'}</p>
+                                <h1 className="text-lg font-black text-[#2C1B18] tracking-tight">Admin Panel</h1>
+                                <p className="text-[10px] text-text-secondary font-medium uppercase tracking-widest">Pura Vida</p>
                             </div>
                         </div>
-                        <div className="flex items-center">
-                            <button
-                                onClick={logout}
-                                className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition"
-                            >
-                                <LogOut size={18} /> Salir
-                            </button>
-                        </div>
+                        <button
+                            onClick={logout}
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                        >
+                            <LogOut size={16} /> Salir
+                        </button>
                     </div>
                 </div>
             </nav>
 
-            <div className="max-w-7xl mx-auto py-8 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto py-10 px-6">
 
-                {/* Tabs */}
-                <div className="flex flex-wrap gap-2 sm:gap-4 mb-6 px-4 sm:px-0">
-                    <button onClick={() => setActiveTab('gustos')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${activeTab === 'gustos' ? 'bg-primary-600 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
-                        <IceCream size={20} /> Sabores
-                    </button>
-                    <button onClick={() => setActiveTab('productos')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${activeTab === 'productos' ? 'bg-primary-600 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
-                        <Package size={20} /> Productos
-                    </button>
-                    <button onClick={() => setActiveTab('pedidos')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${activeTab === 'pedidos' ? 'bg-primary-600 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
-                        <ShoppingBag size={20} /> Pedidos
-                        {activeTab !== 'pedidos' && <span className="ml-1 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">Live</span>}
-                    </button>
+                {/* Tabs Navigation */}
+                <div className="flex flex-wrap gap-4 mb-10 justify-center">
+                    <TabButton id="gustos" icon={IceCream} label="Sabores" />
+                    <TabButton id="productos" icon={Package} label="Productos" />
+                    <TabButton id="pedidos" icon={ShoppingBag} label="Pedidos" liveCount={activeTab !== 'pedidos'} />
                 </div>
 
                 {/* CONTENIDO TAB GUSTOS */}
                 {activeTab === 'gustos' && (
-                    <>
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 px-4 sm:px-0">
-                            <h2 className="text-2xl font-bold text-gray-800">Inventario de Sabores</h2>
+                    <div className="animate-fade-in-up">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                            <h2 className="text-3xl font-bold text-[#2C1B18]">Inventario</h2>
                             <div className="flex gap-3 w-full sm:w-auto">
-                                <div className="relative flex-grow sm:flex-grow-0">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                                    <input type="text" placeholder="Buscar sabor..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 w-full" />
+                                <div className="relative flex-grow sm:flex-grow-0 group">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-[#2C1B18] transition-colors" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="pl-10 pr-4 py-3 border-none bg-white rounded-xl shadow-sm focus:ring-2 focus:ring-[#2C1B18]/10 w-full text-sm font-medium"
+                                    />
                                 </div>
-                                <button onClick={handleCreateGusto} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition">
-                                    <Plus size={20} /> Nuevo
+                                <button onClick={handleCreateGusto} className="bg-[#2C1B18] hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#2C1B18]/20 flex items-center gap-2 transition hover:scale-105 active:scale-95 cursor-pointer">
+                                    <Plus size={18} /> Nuevo Sabor
                                 </button>
                             </div>
                         </div>
 
-                        <div className="bg-white shadow rounded-xl overflow-hidden mx-4 sm:mx-0">
+                        <div className="bg-white rounded-2xl shadow-xl shadow-[#2C1B18]/5 overflow-hidden border border-gray-100">
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                <table className="min-w-full">
+                                    <thead className="bg-gray-50 border-b border-gray-100">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Visible</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-bold text-text-secondary uppercase tracking-widest">Sabor</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-bold text-text-secondary uppercase tracking-widest">Categoría</th>
+                                            <th className="px-8 py-5 text-center text-[10px] font-bold text-text-secondary uppercase tracking-widest">Estado Stock</th>
+                                            <th className="px-8 py-5 text-center text-[10px] font-bold text-text-secondary uppercase tracking-widest">Visibilidad</th>
+                                            <th className="px-8 py-5 text-right text-[10px] font-bold text-text-secondary uppercase tracking-widest">Acciones</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="divide-y divide-gray-50">
                                         {filteredGustos.map((gusto) => (
-                                            <tr key={gusto.id} className="hover:bg-gray-50 transition">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-bold text-gray-900">{gusto.nombre}</div>
-                                                    <div className="text-xs text-gray-500 truncate max-w-[200px]">{gusto.descripcion}</div>
+                                            <tr key={gusto.id} className="hover:bg-gray-50/50 transition duration-150">
+                                                <td className="px-8 py-6">
+                                                    <div className="text-sm font-bold text-[#2C1B18]">{gusto.nombre}</div>
+                                                    <div className="text-xs text-text-secondary mt-1">{gusto.descripcion}</div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap"><span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-50 text-blue-800">{gusto.categoria}</span></td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                    <button onClick={() => toggleStock(gusto.id)}
-                                                        className={`px-3 py-1 rounded-full text-xs font-bold transition flex items-center justify-center gap-1 mx-auto w-28 ${gusto.hayStock ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-red-100 text-red-800 hover:bg-red-200'}`}>
-                                                        {gusto.hayStock ? 'En Stock' : 'AGOTADO'}
+                                                <td className="px-8 py-6">
+                                                    <span className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider rounded-full bg-orange-50 text-orange-800 border border-orange-100">
+                                                        {gusto.categoria}
+                                                    </span>
+                                                </td>
+                                                <td className="px-8 py-6 text-center">
+                                                    <button
+                                                        onClick={() => toggleStock(gusto.id)}
+                                                        className={`px-4 py-1.5 rounded-full text-[10px] uppercase font-bold tracking-wider transition-all border ${gusto.hayStock ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'} cursor-pointer`}
+                                                    >
+                                                        {gusto.hayStock ? 'En Stock' : 'Agotado'}
                                                     </button>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-center cursor-pointer" onClick={() => toggleActive(gusto.id)}>
-                                                    {gusto.activo ? <CheckCircle className="inline text-green-500" size={20} /> : <XCircle className="inline text-gray-300" size={20} />}
+                                                <td className="px-8 py-6 text-center cursor-pointer" onClick={() => toggleActive(gusto.id)}>
+                                                    <div className={`mx-auto w-8 h-8 rounded-full flex items-center justify-center transition-colors ${gusto.activo ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                        {gusto.activo ? <CheckCircle size={18} /> : <XCircle size={18} />}
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <button onClick={() => handleEditGusto(gusto)} className="text-primary-600 hover:text-primary-900 flex items-center gap-1 ml-auto"><Edit2 size={16} /> Editar</button>
+                                                <td className="px-8 py-6 text-right">
+                                                    <button onClick={() => handleEditGusto(gusto)} className="text-text-secondary hover:text-[#2C1B18] transition p-2 rounded-full hover:bg-gray-100 inline-flex cursor-pointer">
+                                                        <Edit2 size={16} />
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
@@ -289,154 +316,176 @@ export default function Dashboard() {
                                 </table>
                             </div>
                         </div>
-                    </>
+                    </div>
                 )}
 
                 {/* CONTENIDO TAB PRODUCTOS */}
                 {activeTab === 'productos' && (
-                    <>
-                        <div className="flex justify-between items-center mb-6 px-4 sm:px-0">
-                            <h2 className="text-2xl font-bold text-gray-800">Precios y Formatos</h2>
+                    <div className="animate-fade-in-up">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+                            <h2 className="text-3xl font-bold text-[#2C1B18]">Precios y Formatos</h2>
+                            <button onClick={handleCreateProduct} className="bg-[#2C1B18] hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#2C1B18]/20 flex items-center gap-2 transition hover:scale-105 active:scale-95 cursor-pointer">
+                                <Plus size={18} /> Nuevo Producto
+                            </button>
                         </div>
-                        <div className="bg-white shadow rounded-xl overflow-hidden mx-4 sm:mx-0">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                        <div className="bg-white rounded-2xl shadow-xl shadow-[#2C1B18]/5 overflow-hidden border border-gray-100">
+                            <table className="min-w-full">
+                                <thead className="bg-gray-50 border-b border-gray-100">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Max. Gustos</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
-                                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                        <th className="px-8 py-5 text-left text-[10px] font-bold text-text-secondary uppercase tracking-widest">Producto</th>
+                                        <th className="px-8 py-5 text-left text-[10px] font-bold text-text-secondary uppercase tracking-widest">Tipo</th>
+                                        <th className="px-8 py-5 text-left text-[10px] font-bold text-text-secondary uppercase tracking-widest">Límite Gustos</th>
+                                        <th className="px-8 py-5 text-right text-[10px] font-bold text-text-secondary uppercase tracking-widest">Precio</th>
+                                        <th className="px-8 py-5 text-right text-[10px] font-bold text-text-secondary uppercase tracking-widest">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody className="divide-y divide-gray-50">
                                     {productos.map((prod) => (
-                                        <tr key={prod.id} className="hover:bg-gray-50 transition">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{prod.nombre}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{prod.esPorPeso ? 'Pote (Por Peso)' : 'Unidad'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{prod.maxGustos > 0 ? prod.maxGustos : '-'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600">${prod.precio.toLocaleString()}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button onClick={() => handleEditProduct(prod)} className="text-primary-600 hover:text-primary-900 flex items-center gap-1 ml-auto"><Edit2 size={16} /> Modificar</button>
+                                        <tr key={prod.id} className="hover:bg-gray-50/50 transition">
+                                            <td className="px-8 py-6 text-sm font-bold text-[#2C1B18]">{prod.nombre}</td>
+                                            <td className="px-8 py-6 text-sm text-text-secondary">{prod.esPorPeso ? 'Por Peso' : 'Unidad'}</td>
+                                            <td className="px-8 py-6 text-sm text-text-secondary pl-12">{prod.maxGustos > 0 ? prod.maxGustos : 'N/A'}</td>
+                                            <td className="px-8 py-6 text-right text-sm font-black text-[#2C1B18]">${prod.precio.toLocaleString()}</td>
+                                            <td className="px-8 py-6 text-right">
+                                                <button onClick={() => handleEditProduct(prod)} className="text-text-secondary hover:text-[#2C1B18] transition p-2 rounded-full hover:bg-gray-100 inline-flex group cursor-pointer">
+                                                    <Edit2 size={16} className="group-hover:scale-110 transition-transform" />
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
-                    </>
+                    </div>
                 )}
 
                 {/* CONTENIDO TAB PEDIDOS */}
                 {activeTab === 'pedidos' && (
-                    <>
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 px-4 sm:px-0">
-                            <div>
-                                <h2 className="text-2xl font-bold text-gray-800">Gestión de Pedidos</h2>
-                                <div className="flex gap-2 mt-2">
-                                    <button
-                                        onClick={() => setViewMode('today')}
-                                        className={`px-3 py-1 text-sm rounded-full transition ${viewMode === 'today' ? 'bg-primary-100 text-primary-800 font-bold' : 'bg-gray-100 text-gray-600'}`}
-                                    >
-                                        Pedidos de Hoy
-                                    </button>
-                                    <button
-                                        onClick={() => setViewMode('history')}
-                                        className={`px-3 py-1 text-sm rounded-full transition ${viewMode === 'history' ? 'bg-primary-100 text-primary-800 font-bold' : 'bg-gray-100 text-gray-600'}`}
-                                    >
-                                        Historial Completo
-                                    </button>
-                                </div>
+                    <div className="animate-fade-in-up">
+                        <div className="flex justify-between items-center mb-8">
+                            <div className="flex gap-2 bg-white p-1 rounded-xl border border-gray-100 shadow-sm">
+                                <button
+                                    onClick={() => setViewMode('today')}
+                                    className={`px-6 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${viewMode === 'today' ? 'bg-[#2C1B18] text-white shadow-md' : 'text-text-secondary hover:bg-gray-50'}`}
+                                >
+                                    Hoy
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('history')}
+                                    className={`px-6 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${viewMode === 'history' ? 'bg-[#2C1B18] text-white shadow-md' : 'text-text-secondary hover:bg-gray-50'}`}
+                                >
+                                    Historial
+                                </button>
                             </div>
-                            <button onClick={fetchPedidos} className="text-sm text-primary-600 hover:text-primary-800 underline">Actualizar Lista</button>
+                            <button onClick={fetchPedidos} className="text-xs font-bold uppercase tracking-wider text-[#2C1B18] hover:underline flex items-center gap-2">
+                                <Clock size={14} /> Actualizar
+                            </button>
                         </div>
 
-                        <div className="space-y-8 mx-4 sm:mx-0">
+                        <div className="space-y-12">
                             {getFilteredPedidos().length === 0 ? (
-                                <div className="text-center py-12 bg-white rounded-xl shadow text-gray-500">
-                                    {viewMode === 'today' ? 'No hay pedidos hoy. ' : 'No hay historial de pedidos.'}
+                                <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+                                    <ShoppingBag className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                                    <p className="text-text-secondary font-medium">No hay pedidos para mostrar.</p>
                                 </div>
                             ) : (
                                 Object.entries(groupPedidosByDate(getFilteredPedidos())).map(([fecha, pedidosDelDia]) => (
-                                    <div key={fecha} className="border-b last:border-0 pb-6 mb-6 last:mb-0 last:pb-0 border-gray-200">
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <h3 className="text-lg font-bold text-gray-700 capitalize border-b-2 border-primary-200 pb-1">
-                                                {fecha}
-                                            </h3>
-                                            <span className="bg-primary-100 text-primary-800 text-xs font-bold px-2 py-1 rounded-full">
-                                                {pedidosDelDia.length} Pedidos
+                                    <div key={fecha}>
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="h-px bg-gray-200 flex-grow"></div>
+                                            <span className="text-xs font-bold uppercase tracking-[0.2em] text-text-secondary bg-white px-4 py-1 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">
+                                                <Calendar size={12} /> {fecha}
                                             </span>
+                                            <div className="h-px bg-gray-200 flex-grow"></div>
                                         </div>
 
-                                        <div className="space-y-4">
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                             {pedidosDelDia.map((pedido) => (
-                                                <div key={pedido.id} className="bg-white shadow rounded-xl p-6 border-l-4 border-primary-500 hover:shadow-lg transition">
-                                                    <div className="flex flex-col md:flex-row justify-between gap-4">
-                                                        {/* Info Cliente */}
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                                <span className="text-lg font-bold text-gray-900">#{pedido.id}</span>
-                                                                <span className="text-gray-500 text-sm">
-                                                                    {new Date(pedido.fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                                                                </span>
+                                                <div key={pedido.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-xl shadow-[#2C1B18]/5 group hover:border-[#2C1B18]/20 transition-all duration-300">
+                                                    <div className="flex justify-between items-start mb-6 border-b border-gray-50 pb-4">
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="text-xl font-black text-[#2C1B18]">#{pedido.id}</span>
                                                                 <StatusBadge status={pedido.estado} />
                                                             </div>
-                                                            <h3 className="font-bold text-gray-800">{pedido.nombreCliente} {pedido.apellidoCliente}</h3>
-                                                            <p className="text-sm text-gray-600">{pedido.direccion}</p>
-                                                            <p className="text-sm text-gray-500">{pedido.telefono}</p>
+                                                            <div className="flex items-center gap-2 text-xs text-text-secondary font-medium">
+                                                                <Clock size={12} />
+                                                                {new Date(pedido.fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                                                            </div>
                                                         </div>
+                                                        <div className="text-right">
+                                                            <div className="flex items-center justify-end gap-1 text-[#2C1B18] font-black text-xl">
+                                                                <span className="text-xs text-text-secondary font-medium mr-1">Total</span>
+                                                                ${pedido.precioTotal.toLocaleString()}
+                                                            </div>
+                                                            <div className="text-[10px] font-bold uppercase tracking-wider text-text-secondary bg-gray-50 px-2 py-0.5 rounded inline-block mt-1">
+                                                                {pedido.metodoPago}
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                                                        {/* Items */}
-                                                        <div className="flex-1 border-t md:border-t-0 md:border-l border-gray-100 md:pl-6 pt-4 md:pt-0">
-                                                            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Detalle del Pedido</h4>
-                                                            <ul className="space-y-2">
-                                                                {pedido.items.map((item, idx) => (
-                                                                    <li key={idx} className="text-sm text-gray-700">
-                                                                        <span className="font-bold text-primary-700">{item.cantidad}x {item.tipoProducto.nombre}</span>
-                                                                        <div className="text-xs text-gray-500 ml-4">
+                                                    <div className="space-y-4 mb-6">
+                                                        <div className="flex items-start gap-3">
+                                                            <User size={16} className="text-gray-400 mt-1 flex-shrink-0" />
+                                                            <div>
+                                                                <p className="font-bold text-gray-900 text-sm">{pedido.nombreCliente} {pedido.apellidoCliente}</p>
+                                                                <p className="text-xs text-gray-500">{pedido.telefono}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-start gap-3">
+                                                            <MapPin size={16} className="text-gray-400 mt-1 flex-shrink-0" />
+                                                            <p className="text-sm text-gray-600 leading-relaxed dark:text-gray-400">{pedido.direccion}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                                                        <ul className="space-y-3">
+                                                            {pedido.items.map((item, idx) => (
+                                                                <li key={idx} className="text-sm">
+                                                                    <div className="flex justify-between items-baseline mb-1">
+                                                                        <span className="font-bold text-[#2C1B18]">{item.cantidad}x {item.tipoProducto.nombre}</span>
+                                                                    </div>
+                                                                    {item.gustos.length > 0 && (
+                                                                        <p className="text-xs text-text-secondary leading-relaxed pl-4 border-l-2 border-gray-200">
                                                                             {item.gustos.map(g => g.nombre).join(', ')}
-                                                                        </div>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
+                                                                        </p>
+                                                                    )}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary mb-1 block">Estado</label>
+                                                            <select
+                                                                value={pedido.estado}
+                                                                onChange={(e) => handleStatusChange(pedido.id, e.target.value)}
+                                                                className="w-full text-xs font-medium border-gray-200 rounded-lg focus:ring-[#2C1B18] focus:border-[#2C1B18] bg-white py-2"
+                                                            >
+                                                                <option value="PENDIENTE">PENDIENTE</option>
+                                                                <option value="EN_PREPARACION">EN PREPARACIÓN</option>
+                                                                <option value="LISTO">LISTO</option>
+                                                                <option value="ENTREGADO">ENTREGADO</option>
+                                                                <option value="CANCELADO">CANCELADO</option>
+                                                            </select>
                                                         </div>
-
-                                                        {/* Total y Acciones */}
-                                                        <div className="flex flex-col justify-between items-end min-w-[150px] border-t md:border-t-0 md:border-l border-gray-100 md:pl-6 pt-4 md:pt-0">
-                                                            <div className="text-right mb-4">
-                                                                <p className="text-xs text-gray-500 uppercase">Total</p>
-                                                                <p className="text-2xl font-black text-gray-900">${pedido.precioTotal.toLocaleString()}</p>
-                                                                <p className="text-xs font-bold text-gray-500 mt-1">{pedido.metodoPago}</p>
-                                                            </div>
-
-                                                            <div className="w-full">
-                                                                <label className="text-xs text-gray-400 block mb-1">Cambiar Estado:</label>
+                                                        <div>
+                                                            <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary mb-1 block">Repartidor</label>
+                                                            <div className="relative">
                                                                 <select
-                                                                    value={pedido.estado}
-                                                                    onChange={(e) => handleStatusChange(pedido.id, e.target.value)}
-                                                                    className="w-full text-sm border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                                                                >
-                                                                    <option value="PENDIENTE">Pendiente</option>
-                                                                    <option value="EN_PREPARACION">En Preparación</option>
-                                                                    <option value="LISTO">Listo</option>
-                                                                    <option value="ENTREGADO">Entregado</option>
-                                                                    <option value="CANCELADO">Cancelado</option>
-                                                                </select>
-                                                            </div>
-                                                            <div className="w-full mt-4 border-t pt-2"> {/* Agregamos un separador y margen */}
-                                                                <label className="text-xs text-gray-400 block mb-1">Asignar Repartidor:</label>
-                                                                <select
-                                                                    value={pedido.repartidor || ""} // Si es null, muestra la opción por defecto
+                                                                    value={pedido.repartidor || ""}
                                                                     onChange={(e) => handleRepartidorChange(pedido.id, e.target.value)}
-                                                                    className={`w-full text-sm border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 ${pedido.repartidor ? 'bg-green-50 text-green-800 font-bold' : 'bg-gray-50'}`}
+                                                                    className={`w-full text-xs font-medium border-gray-200 rounded-lg focus:ring-[#2C1B18] focus:border-[#2C1B18] py-2 pl-8 appearance-none
+                                                                        ${pedido.repartidor ? 'bg-green-50 text-green-800 border-green-200' : 'bg-white text-gray-500'}
+                                                                    `}
                                                                 >
-                                                                    <option value="">-- Sin asignar --</option>
+                                                                    <option value="">Sin Asignar</option>
                                                                     {REPARTIDORES.map((repa) => (
-                                                                        <option key={repa} value={repa}>
-                                                                            {repa}
-                                                                        </option>
+                                                                        <option key={repa} value={repa}>{repa}</option>
                                                                     ))}
                                                                 </select>
+                                                                <Truck className={`absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 ${pedido.repartidor ? 'text-green-600' : 'text-gray-400'}`} />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -447,9 +496,8 @@ export default function Dashboard() {
                                 ))
                             )}
                         </div>
-                    </>
+                    </div>
                 )}
-
             </div>
         </div>
     );

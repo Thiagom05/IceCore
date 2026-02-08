@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { Lock, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
     const [username, setUsername] = useState('');
@@ -26,78 +26,76 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="flex justify-center">
-                    <div className="bg-primary-600 p-3 rounded-full">
-                        <Lock className="h-8 w-8 text-white" />
+        <div className="min-h-screen bg-bg-primary flex flex-col justify-center items-center px-4">
+            <div className="max-w-md w-full bg-white p-10 rounded-3xl shadow-2xl shadow-[#2C1B18]/10 border border-gray-100">
+                <div className="text-center mb-10">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#2C1B18] text-white mb-6 shadow-lg shadow-[#2C1B18]/20">
+                        <Lock className="w-8 h-8" />
                     </div>
+                    <h2 className="text-3xl font-black text-[#2C1B18] tracking-tighter mb-2">
+                        Pura Vida
+                    </h2>
+                    <p className="text-text-secondary text-sm font-medium tracking-wide uppercase">
+                        Acceso Administrativo
+                    </p>
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 font-serif">
-                    Acceso Administrativo
-                </h2>
-                <p className="mt-2 text-center text-sm text-gray-600">
-                    Panel de Gestión de Pura Vida
-                </p>
+
+                <form className="space-y-8" onSubmit={handleSubmit}>
+                    <div className="space-y-6">
+                        <div className="group">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">Usuario</label>
+                            <input
+                                id="username"
+                                name="username"
+                                type="text"
+                                required
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg"
+                                placeholder="User"
+                            />
+                        </div>
+
+                        <div className="group">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">Contraseña</label>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg"
+                                placeholder="••••••••"
+                            />
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="text-red-500 text-sm font-medium text-center bg-red-50 p-3 rounded-lg flex items-center justify-center gap-2">
+                            <span>⚠️</span> {error}
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={isLoading}
+                        className={`w-full py-4 px-4 border border-transparent rounded-2xl shadow-lg text-sm font-bold text-white uppercase tracking-wider transition-all
+                        ${isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#2C1B18] hover:bg-black hover:scale-[1.02] shadow-[#2C1B18]/20'} 
+                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2C1B18] flex justify-center items-center gap-2 cursor-pointer`}
+                    >
+                        {isLoading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" /> Verificando...
+                            </>
+                        ) : 'Ingresar al Panel'}
+                    </button>
+                </form>
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-                    <form className="space-y-6" onSubmit={handleSubmit}>
-                        <div>
-                            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                                Usuario
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="username"
-                                    name="username"
-                                    type="text"
-                                    required
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                Contraseña
-                            </label>
-                            <div className="mt-1">
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                                />
-                            </div>
-                        </div>
-
-                        {error && (
-                            <div className="text-red-600 text-sm text-center bg-red-50 p-2 rounded">
-                                {error}
-                            </div>
-                        )}
-
-                        <div>
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
-                                ${isLoading ? 'bg-gray-400' : 'bg-primary-600 hover:bg-primary-700'} 
-                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition`}
-                            >
-                                {isLoading ? 'Verificando...' : 'Ingresar'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+            <p className="mt-8 text-center text-xs text-gray-400">
+                &copy; 2026 IceCore System
+            </p>
         </div>
     );
 }

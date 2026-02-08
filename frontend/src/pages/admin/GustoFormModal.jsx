@@ -51,70 +51,72 @@ export default function GustoFormModal({ isOpen, onClose, gustoToEdit, onSave })
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
-                <div className="bg-primary-600 px-6 py-4 flex justify-between items-center">
-                    <h3 className="text-white font-bold text-lg">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in border border-gray-100">
+                <div className="bg-[#2C1B18] px-8 py-6 flex justify-between items-center">
+                    <h3 className="text-white font-black text-xl tracking-tight">
                         {gustoToEdit ? 'Editar Sabor' : 'Nuevo Sabor'}
                     </h3>
-                    <button onClick={onClose} className="text-white/80 hover:text-white transition">
+                    <button onClick={onClose} className="text-white/80 hover:text-white transition p-1 hover:bg-white/10 rounded-full">
                         <X size={24} />
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                    <div className="group">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">Nombre del Sabor</label>
                         <input
                             type="text"
                             required
                             value={formData.nombre}
                             onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                            className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 p-2 border"
+                            className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold placeholder-gray-400 focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg"
                             placeholder="Ej: Chocolate Suizo"
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-                        <select
-                            value={formData.categoria}
-                            onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                            className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 p-2 border"
-                        >
-                            <option value="Cremas">Cremas</option>
-                            <option value="Dulces">Dulces</option>
-                            <option value="Chocolates">Chocolates</option>
-                            <option value="Frutales">Frutales</option>
-                        </select>
+                    <div className="group">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">Categoría</label>
+                        <div className="relative">
+                            <select
+                                value={formData.categoria}
+                                onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                                className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg appearance-none cursor-pointer"
+                            >
+                                <option value="Cremas">Cremas</option>
+                                <option value="Dulces">Dulces</option>
+                                <option value="Chocolates">Chocolates</option>
+                                <option value="Frutales">Frutales</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Descripción (Opcional)</label>
+                    <div className="group">
+                        <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">Descripción (Opcional)</label>
                         <textarea
                             rows="3"
                             value={formData.descripcion}
                             onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                            className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500 p-2 border"
+                            className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-gray-700 placeholder-gray-400 focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg resize-none"
                             placeholder="Breve descripción de los ingredientes..."
                         />
                     </div>
 
-                    <div className="pt-4 flex justify-end gap-3">
+                    <div className="pt-6 flex justify-end gap-3 border-t border-gray-100 mt-4">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+                            className="px-6 py-3 text-xs font-bold uppercase tracking-widest text-text-secondary hover:text-[#2C1B18] hover:bg-gray-50 rounded-xl transition cursor-pointer"
                         >
                             Cancelar
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium shadow-sm flex items-center gap-2
+                            className={`px-8 py-3 bg-[#2C1B18] text-white rounded-xl hover:bg-black hover:scale-105 active:scale-95 transition-all shadow-lg shadow-[#2C1B18]/20 text-xs font-bold uppercase tracking-widest flex items-center gap-2
                                 ${loading ? 'opacity-70 cursor-wait' : ''}
-                            `}
+                            cursor-pointer`}
                         >
-                            {loading ? 'Guardando...' : 'Guardar Cambios'}
+                            {loading ? 'Guardando...' : 'Guardar Sabor'}
                         </button>
                     </div>
                 </form>
