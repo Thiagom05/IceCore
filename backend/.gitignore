@@ -32,5 +32,9 @@ build/
 ### VS Code ###
 .vscode/
 
+<<<<<<< HEAD
 ### Secrets ###
 src/main/resources/application.properties
+=======
+application.properties
+>>>>>>> 665731a46ce4c3b841b18659d7efca3228b6620b

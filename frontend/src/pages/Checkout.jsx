@@ -130,14 +130,24 @@ export default function Checkout() {
             mensaje += `*Forma de Pago:* ${metodo === 'transferencia' ? 'Transferencia (Envío comprobante)' : 'Efectivo contra entrega'}\n`;
             if (formData.aclaraciones) mensaje += `*Aclaraciones:* ${formData.aclaraciones}`;
 
-            const url = `https://wa.me/5492262485095?text=${encodeURIComponent(mensaje)}`;
+            if (formData.aclaraciones) mensaje += `*Aclaraciones:* ${formData.aclaraciones}`;
+
+            const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER;
 
             clearCart();
-            window.open(url, '_blank');
+
+            if (whatsappNumber) {
+                const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(mensaje)}`;
+                window.open(url, '_blank');
+            } else {
+                // MODO PORTFOLIO / DEMO
+                alert("✨ MODO PORTFOLIO: En un entorno real, esto abriría WhatsApp con tu pedido.\n\n" + mensaje);
+            }
+
             navigate('/');
         } catch (error) {
             console.error("Error al procesar pedido:", error);
-            const msg = error.response?.data || "Hubo un error al procesar tu pedido.";
+            const msg = error.response?.data || "Hubo un error al procesar tu pedido."; // Fix error msg access
             alert("Error: " + msg);
         } finally {
             setLoading(false);
