@@ -75,6 +75,13 @@ export default function Checkout() {
     };
 
     const handleMercadoPago = async () => {
+        const paymentsEnabled = import.meta.env.VITE_ENABLE_PAYMENTS === 'true';
+
+        if (!paymentsEnabled) {
+            alert("✨ MODO PORTFOLIO: El pago con Mercado Pago está deshabilitado en esta demostración para evitar transacciones reales.");
+            return;
+        }
+
         setLoading(true);
         try {
             const res = await api.post('/payments/create_preference', cart);
