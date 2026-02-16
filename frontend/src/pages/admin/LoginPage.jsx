@@ -11,18 +11,35 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
 
+    const [showColdStartMessage, setShowColdStartMessage] = useState(false);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
+        setShowColdStartMessage(false);
 
-        const result = await login(username, password);
-        if (result.success) {
-            navigate('/admin/dashboard');
-        } else {
-            setError(result.error || 'Error desconocido');
+        // Timer para mostrar mensaje de "Cold Start" si tarda más de 3 segundos
+        const timer = setTimeout(() => {
+            setShowColdStartMessage(true);
+        }, 3000);
+
+        try {
+            const result = await login(username, password);
+            clearTimeout(timer); // Cancelar timer si responde rápido
+
+            if (result.success) {
+                navigate('/admin/dashboard');
+            } else {
+                setError(result.error || 'Error desconocido');
+            }
+        } catch (err) {
+            clearTimeout(timer);
+            setError('Error de conexión');
+        } finally {
+            setIsLoading(false);
+            setShowColdStartMessage(false);
         }
-        setIsLoading(false);
     };
 
     return (
@@ -86,10 +103,18 @@ export default function LoginPage() {
                     >
                         {isLoading ? (
                             <>
-                                <Loader2 className="w-4 h-4 animate-spin" /> Verificando...
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                {showColdStartMessage ? 'Despertando servidor (puede demorar)...' : 'Verificando...'}
                             </>
                         ) : 'Ingresar al Panel'}
                     </button>
+
+                    {showColdStartMessage && (
+                        <p className="text-center text-xs text-amber-600 animate-pulse mt-2">
+                            ⏳ El servidor gratuito entra en reposo por inactividad. <br />
+                            Por favor espera unos segundos mientras se inicia.
+                        </p>
+                    )}
                 </form>
             </div>
 
