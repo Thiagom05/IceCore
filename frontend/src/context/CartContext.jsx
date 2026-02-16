@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { defaultProducts, defaultGustos } from '../data/defaultCatalog';
 
 const CartContext = createContext();
 
@@ -49,40 +50,42 @@ export const CartProvider = ({ children }) => {
     const cartCount = cart.length;
 
     // --- CATALOGO CACHEADO ---
-    const [products, setProducts] = useState([]);
-    const [gustos, setGustos] = useState([]);
-    const [catalogLoading, setCatalogLoading] = useState(false);
+    // Inicializamos con el catálogo estático para "Zero Latency"
+    const [products, setProducts] = useState(defaultProducts);
+    const [gustos, setGustos] = useState(defaultGustos);
+    const [catalogLoading, setCatalogLoading] = useState(false); // Ya no cargamos, mostramos lo estático de una
 
     const fetchCatalog = async (force = false) => {
-        setCatalogLoading(true);
+        // No ponemos setLoading(true) para no bloquear la UI con spinners.
+        // La actualización ocurre en "segundo plano" (background revalidation).
         try {
             const now = Date.now();
             const CACHE_DURATION = 60 * 60 * 1000; // 1 Hora
 
-            // 1. Intentar cargar desde localStorage
+            // 1. Intentar cargar desde localStorage (Mejor que estático si existe)
             if (!force) {
                 const cachedProducts = localStorage.getItem('icecore_products');
                 const cachedGustos = localStorage.getItem('icecore_gustos');
                 const lastFetch = localStorage.getItem('icecore_catalog_time');
 
                 if (cachedProducts && cachedGustos && lastFetch && (now - parseInt(lastFetch) < CACHE_DURATION)) {
-                    console.log("Usando catálogo en caché ⚡");
+                    console.log("Usando catálogo en caché (Local Storage) ⚡");
                     setProducts(JSON.parse(cachedProducts));
                     setGustos(JSON.parse(cachedGustos));
-                    setCatalogLoading(false);
                     return;
                 }
             }
 
-            // 2. Si no hay caché o expiró, buscar en API
-            console.log("Fetching catálogo fresco from API 🌐");
+            // 2. Si no hay caché válido, buscamos en la API (Second plane update)
+            console.log("Actualizando catálogo desde API (Background) 🌐");
             const [tiposRes, gustosRes] = await Promise.all([
                 import('../lib/api').then(module => module.default.get('/tipos-producto')),
                 import('../lib/api').then(module => module.default.get('/gustos/activos'))
             ]);
 
-            setProducts(tiposRes.data);
-            setGustos(gustosRes.data);
+            // Solo actualizamos si hay datos reales
+            if (tiposRes.data && tiposRes.data.length > 0) setProducts(tiposRes.data);
+            if (gustosRes.data && gustosRes.data.length > 0) setGustos(gustosRes.data);
 
             // 3. Guardar en localStorage
             localStorage.setItem('icecore_products', JSON.stringify(tiposRes.data));
@@ -90,10 +93,8 @@ export const CartProvider = ({ children }) => {
             localStorage.setItem('icecore_catalog_time', now.toString());
 
         } catch (error) {
-            console.error("Error fetching catalog:", error);
-            // Fallback a caché vencido si falla la red?
-        } finally {
-            setCatalogLoading(false);
+            console.warn("No se pudo actualizar el catálogo con el backend. Usando versión estática/caché.", error);
+            // No hacemos nada, el usuario sigue viendo los datos estáticos/viejos que son mejores que nada.
         }
     };
 
