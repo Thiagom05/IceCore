@@ -118,15 +118,33 @@ public class PedidoService {
         return pedidoRepository.save(pedido);
     }
 
+    @Autowired
+    private com.heladeria.icecore.repository.RepartidorRepository repartidorRepository;
+
+    public com.heladeria.icecore.entity.Repartidor findRepartidorByName(String nombre) {
+        // Implement logic to find repartidor by name if needed, or change
+        // updateRepartidor logic
+        // For simplicity, let's assume updateRepartidor now takes ID or we find by name
+        return repartidorRepository.findAll().stream()
+                .filter(r -> r.getNombre().equalsIgnoreCase(nombre))
+                .findFirst()
+                .orElse(null);
+    }
+
     public Pedido updateRepartidor(Long id, String nombreRepartidor) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado id: " + id));
 
-        pedido.setRepartidor(nombreRepartidor);
-
-        // Si asignan repartidor, pasamos el estado a "EN_CAMINO"
         if (nombreRepartidor != null && !nombreRepartidor.isEmpty()) {
+            com.heladeria.icecore.entity.Repartidor rep = findRepartidorByName(nombreRepartidor);
+            if (rep == null) {
+                // If not found, maybe create or throw? For now, throw.
+                throw new RuntimeException("Repartidor no encontrado: " + nombreRepartidor);
+            }
+            pedido.setRepartidor(rep);
             pedido.setEstado("EN_CAMINO");
+        } else {
+            pedido.setRepartidor(null);
         }
 
         return pedidoRepository.save(pedido);
