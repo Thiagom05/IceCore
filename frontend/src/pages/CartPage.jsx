@@ -39,7 +39,9 @@ export default function CartPage() {
                             <div key={item.cartId} className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 border-dashed pb-8 last:border-0 last:pb-0 group">
                                 <div className="flex-grow space-y-2">
                                     <div className="flex items-baseline gap-3">
-                                        <h3 className="text-xl font-bold text-[#2C1B18]">{item.product.nombre}</h3>
+                                        <h3 className="text-xl font-bold text-[#2C1B18]">
+                                            {(item.quantity > 1 ? `${item.quantity}x ` : '') + item.product.nombre}
+                                        </h3>
                                     </div>
                                     {(item.gustos && item.gustos.length > 0) ? (
                                         <p className="text-text-secondary text-sm leading-relaxed max-w-lg">
@@ -52,7 +54,7 @@ export default function CartPage() {
 
                                 <div className="flex items-center mt-4 sm:mt-0 gap-6">
                                     <span className="text-lg font-bold text-[#2C1B18]">
-                                        ${item.price.toLocaleString('es-AR')}
+                                        ${(item.price * (item.quantity || 1)).toLocaleString('es-AR')}
                                     </span>
                                     <button
                                         onClick={() => removeFromCart(item.cartId)}

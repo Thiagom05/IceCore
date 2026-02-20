@@ -37,10 +37,11 @@ export default function Checkout() {
     };
 
     const handleMercadoPago = async () => {
+        const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
         const paymentsEnabled = import.meta.env.VITE_ENABLE_PAYMENTS === 'true';
 
-        if (!paymentsEnabled) {
-            showError("✨ MODO PORTFOLIO: El pago con Mercado Pago está deshabilitado en esta demostración para evitar transacciones reales.");
+        if (isDemo || !paymentsEnabled) {
+            showError("✨ MODO DEMO/PORTFOLIO: La pasarela de pagos está deshabilitada para esta demostración.");
             return;
         }
 
@@ -60,7 +61,7 @@ export default function Checkout() {
         const itemsDTO = cart.map(item => ({
             tipoProductoId: item.product.id,
             gustoIds: item.gustos ? item.gustos.map(g => g.id) : [],
-            cantidad: 1
+            cantidad: item.quantity || 1
         }));
 
         const pedidoDTO = {
@@ -88,28 +89,28 @@ export default function Checkout() {
             mensaje += `*Pedido:*\n`;
 
             cart.forEach(item => {
-                mensaje += `- ${item.product.nombre}`;
+                mensaje += `- ${(item.quantity > 1 ? `${item.quantity}x ` : '') + item.product.nombre}`;
                 if (item.gustos && item.gustos.length > 0) {
                     mensaje += ` (${item.gustos.map(g => g.nombre).join(', ')})`;
                 }
-                mensaje += ` - $${item.price}\n`;
+                mensaje += ` - $${item.price * (item.quantity || 1)}\n`;
             });
 
             mensaje += `\n*TOTAL: $${cartTotal}*\n`;
             mensaje += `*Forma de Pago:* ${metodo === 'transferencia' ? 'Transferencia (Envío comprobante)' : 'Efectivo contra entrega'}\n`;
             if (formData.aclaraciones) mensaje += `*Aclaraciones:* ${formData.aclaraciones}`;
 
-            const whatsappNumber = "5492262485095";
-            const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(mensaje)}`;
+            const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER || "5492262485095";
+            const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
 
             clearCart();
 
-            if (whatsappNumber) {
+            if (isDemo) {
+                // MODO PORTFOLIO / DEMO
+                showError("✨ MODO DEMO/PORTFOLIO: En un entorno real, esto abriría WhatsApp con tu pedido.\n\n" + mensaje, "Pedido Simulado Exitosamente");
+            } else {
                 const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(mensaje)}`;
                 window.open(url, '_blank');
-            } else {
-                // MODO PORTFOLIO / DEMO
-                showError("✨ MODO PORTFOLIO: En un entorno real, esto abriría WhatsApp con tu pedido.\n\n" + mensaje);
             }
 
             navigate('/');
