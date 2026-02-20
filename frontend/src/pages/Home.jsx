@@ -23,7 +23,7 @@ export default function Home() {
                 if (isAtEnd) {
                     current.scrollTo({ left: 0, behavior: 'smooth' });
                 } else {
-                    const scrollAmount = window.innerWidth * 0.85;
+                    const scrollAmount = window.innerWidth * 1.2;
                     current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
                 }
             }

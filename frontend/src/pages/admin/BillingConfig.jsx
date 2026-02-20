@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import api from '../../lib/api';
 import { Save, AlertTriangle, ShieldCheck } from 'lucide-react';
 
+import { useUI } from '../../context/UIContext';
+
 export default function BillingConfig() {
+    const { showError } = useUI();
     const [settings, setSettings] = useState({
         targetPercentage: 0,
         businessName: '',
@@ -39,10 +42,10 @@ export default function BillingConfig() {
         setSaving(true);
         try {
             await api.post('/billing/settings', settings);
-            alert("Configuración guardada correctamente");
+            showError("Configuración guardada correctamente", "Éxito");
         } catch (error) {
             console.error("Error saving settings", error);
-            alert("Error al guardar configuración");
+            showError("Error al guardar configuración");
         } finally {
             setSaving(false);
         }

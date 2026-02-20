@@ -1,27 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { useCart } from '../context/CartContext';
+import { useUI } from '../context/UIContext';
 import { ChevronRight, Check, Plus, Minus } from 'lucide-react';
 
 export default function Order() {
-    const { addToCart, products, gustos, catalogLoading } = useCart();
-
-    // Local state for UI
-    const [tiposProducto, setTiposProducto] = useState([]); // Mantener si hay logica derivada, o usar directo products
-    const [localGustos, setLocalGustos] = useState([]);
-
-    // Sincronizar con contexto
-    useEffect(() => {
-        setTiposProducto(products);
-        setLocalGustos(gustos);
-    }, [products, gustos]);
+    const { addToCart, products: tiposProducto, gustos, catalogLoading } = useCart();
+    const { showError } = useUI();
 
     const [step, setStep] = useState(1);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedGustos, setSelectedGustos] = useState([]);
     const [quantity, setQuantity] = useState(1);
-
-    // Eliminamos el useEffect de fetch data local ya que el Context se encarga
 
     const handleProductSelect = (producto) => {
         setSelectedProduct(producto);
@@ -41,7 +31,7 @@ export default function Order() {
             if (selectedGustos.length < selectedProduct.maxGustos) {
                 setSelectedGustos([...selectedGustos, gusto]);
             } else {
-                alert(`Máximo ${selectedProduct.maxGustos} gustos permitidos.`);
+                showError(`Máximo ${selectedProduct.maxGustos} gustos permitidos.`);
             }
         }
     };
@@ -129,12 +119,17 @@ export default function Order() {
                                                 ${!gusto.hayStock ? 'opacity-50 cursor-not-allowed bg-gray-50' : ''} cursor-pointer
                                             `}
                                         >
-                                            <div className="flex justify-between items-start mb-2">
+                                            <div className="flex justify-between items-start mb-1">
                                                 <h4 className={`font-bold text-sm md:text-base leading-tight ${isSelected ? 'text-white' : 'text-[#2C1B18]'}`}>{gusto.nombre}</h4>
-                                                {isSelected && <Check className="w-4 h-4 text-white" />}
-                                                {!gusto.hayStock && <span className="text-[10px] font-bold text-red-500 uppercase">Agotado</span>}
+                                                {isSelected && <Check className="w-4 h-4 text-white shrink-0 ml-2" />}
+                                                {!gusto.hayStock && <span className="text-[10px] font-bold text-red-500 uppercase shrink-0 ml-2">Agotado</span>}
                                             </div>
-                                            <span className={`text-xs uppercase tracking-wider font-medium ${isSelected ? 'text-white/60' : 'text-text-secondary'}`}>
+                                            {gusto.descripcion && (
+                                                <p className={`text-xs mb-2 line-clamp-2 ${isSelected ? 'text-white/80' : 'text-text-secondary'}`}>
+                                                    {gusto.descripcion}
+                                                </p>
+                                            )}
+                                            <span className={`text-[10px] uppercase tracking-wider font-bold ${isSelected ? 'text-white/60' : 'text-text-secondary/60'}`}>
                                                 {gusto.categoria}
                                             </span>
                                         </button>

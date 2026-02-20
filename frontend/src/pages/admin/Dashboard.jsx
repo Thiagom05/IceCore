@@ -5,6 +5,7 @@ import { LogOut, Plus, Search, CheckCircle, XCircle, Edit2, IceCream, Package, S
 import GustoFormModal from './GustoFormModal';
 import ProductFormModal from './ProductFormModal';
 import DeliveryManager from './DeliveryManager';
+import { defaultGustos, defaultProducts } from '../../data/defaultCatalog';
 
 export default function Dashboard() {
     const { logout, user } = useAuth();
@@ -154,6 +155,86 @@ export default function Dashboard() {
         } catch (error) {
             console.error("Error cambiando visibilidad:", error);
             fetchGustos();
+        }
+    };
+
+    const handleImportDefaults = async () => {
+        if (!window.confirm("¿Deseas importar los sabores por defecto a la base de datos? Esto solo agregará los que falten.")) return;
+
+        setLoading(true);
+        try {
+            // Obtener nombres existentes para no duplicar
+            const existingNames = new Set(gustos.map(g => g.nombre.toLowerCase().trim()));
+
+            const toImport = defaultGustos.filter(def =>
+                !existingNames.has(def.nombre.toLowerCase().trim())
+            );
+
+            if (toImport.length === 0) {
+                alert("Todos los sabores por defecto ya existen en la base de datos.");
+                setLoading(false);
+                return;
+            }
+
+            // Subir uno por uno (o batch si el backend soportara, haremos loop por compatibilidad)
+            let count = 0;
+            for (const gusto of toImport) {
+                // Adaptar objeto al formato del backend (sin ID)
+                const payload = {
+                    nombre: gusto.nombre,
+                    descripcion: gusto.descripcion || "",
+                    categoria: gusto.categoria,
+                    hayStock: gusto.hayStock,
+                    activo: true
+                };
+                await api.post('/gustos', payload);
+                count++;
+            }
+
+            alert(`¡Éxito! Se importaron ${count} sabores nuevos.`);
+            fetchGustos(); // Recargar tabla
+        } catch (error) {
+            console.error("Error importando defaults:", error);
+            alert("Hubo un error al importar algunos sabores.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleImportProductsDefaults = async () => {
+        if (!window.confirm("¿Deseas importar los productos por defecto?")) return;
+
+        setLoading(true);
+        try {
+            const existingNames = new Set(productos.map(p => p.nombre.toLowerCase().trim()));
+            const toImport = defaultProducts.filter(def =>
+                !existingNames.has(def.nombre.toLowerCase().trim())
+            );
+
+            if (toImport.length === 0) {
+                alert("Todos los productos por defecto ya existen.");
+                setLoading(false);
+                return;
+            }
+
+            let count = 0;
+            for (const prod of toImport) {
+                const payload = {
+                    nombre: prod.nombre,
+                    precio: prod.precio,
+                    maxGustos: prod.maxGustos,
+                    esPorPeso: prod.esPorPeso
+                };
+                await api.post('/tipos-producto', payload);
+                count++;
+            }
+            alert(`¡Éxito! Se importaron ${count} productos nuevos.`);
+            fetchProductos();
+        } catch (error) {
+            console.error("Error importando productos:", error);
+            alert("Error al importar productos.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -377,6 +458,9 @@ export default function Dashboard() {
                                         className="pl-10 pr-4 py-3 border-none bg-white rounded-xl shadow-sm focus:ring-2 focus:ring-[#2C1B18]/10 w-full text-sm font-medium"
                                     />
                                 </div>
+                                <button onClick={handleImportDefaults} className="bg-white border border-gray-200 text-[#2C1B18] hover:bg-gray-50 px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition cursor-pointer">
+                                    <IceCream size={18} /> Cargar Defaults
+                                </button>
                                 <button onClick={handleCreateGusto} className="bg-[#2C1B18] hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#2C1B18]/20 flex items-center gap-2 transition hover:scale-105 active:scale-95 cursor-pointer">
                                     <Plus size={18} /> Nuevo Sabor
                                 </button>
@@ -439,9 +523,14 @@ export default function Dashboard() {
                     <div className="animate-fade-in-up">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                             <h2 className="text-3xl font-bold text-[#2C1B18]">Precios y Formatos</h2>
-                            <button onClick={handleCreateProduct} className="bg-[#2C1B18] hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#2C1B18]/20 flex items-center gap-2 transition hover:scale-105 active:scale-95 cursor-pointer">
-                                <Plus size={18} /> Nuevo Producto
-                            </button>
+                            <div className="flex gap-3">
+                                <button onClick={handleImportProductsDefaults} className="bg-white border border-gray-200 text-[#2C1B18] hover:bg-gray-50 px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition cursor-pointer">
+                                    <Package size={18} /> Cargar Defaults
+                                </button>
+                                <button onClick={handleCreateProduct} className="bg-[#2C1B18] hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#2C1B18]/20 flex items-center gap-2 transition hover:scale-105 active:scale-95 cursor-pointer">
+                                    <Plus size={18} /> Nuevo Producto
+                                </button>
+                            </div>
                         </div>
                         <div className="bg-white rounded-2xl shadow-xl shadow-[#2C1B18]/5 overflow-hidden border border-gray-100">
                             <table className="min-w-full">

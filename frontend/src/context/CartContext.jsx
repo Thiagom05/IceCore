@@ -69,10 +69,15 @@ export const CartProvider = ({ children }) => {
                 const lastFetch = localStorage.getItem('icecore_catalog_time');
 
                 if (cachedProducts && cachedGustos && lastFetch && (now - parseInt(lastFetch) < CACHE_DURATION)) {
-                    console.log("Usando catálogo en caché (Local Storage) ⚡");
-                    setProducts(JSON.parse(cachedProducts));
-                    setGustos(JSON.parse(cachedGustos));
-                    return;
+                    const parsedProducts = JSON.parse(cachedProducts);
+                    const parsedGustos = JSON.parse(cachedGustos);
+
+                    if (parsedProducts.length > 0 && parsedGustos.length > 0) {
+                        console.log("Usando catálogo en caché (Local Storage) ⚡");
+                        setProducts(parsedProducts);
+                        setGustos(parsedGustos);
+                        return;
+                    }
                 }
             }
 
@@ -83,13 +88,32 @@ export const CartProvider = ({ children }) => {
                 import('../lib/api').then(module => module.default.get('/gustos/activos'))
             ]);
 
-            // Solo actualizamos si hay datos reales
-            if (tiposRes.data && tiposRes.data.length > 0) setProducts(tiposRes.data);
-            if (gustosRes.data && gustosRes.data.length > 0) setGustos(gustosRes.data);
+            // --- LÓGICA DE FUSIÓN INTELIGENTE (SMART MERGE) ---
+            // Función para fusionar: Agrega items del default si NO existen en la respuesta de la API (por nombre)
+            const smartMerge = (defaultItems, apiItems) => {
+                if (!apiItems || apiItems.length === 0) return defaultItems;
 
-            // 3. Guardar en localStorage
-            localStorage.setItem('icecore_products', JSON.stringify(tiposRes.data));
-            localStorage.setItem('icecore_gustos', JSON.stringify(gustosRes.data));
+                // Normalizamos nombres para comparar (minusculas, trim)
+                const apiNames = new Set(apiItems.map(item => item.nombre.toLowerCase().trim()));
+
+                // Filtramos los defaults que NO esten en la API
+                const missingDefaults = defaultItems.filter(defItem =>
+                    !apiNames.has(defItem.nombre.toLowerCase().trim())
+                );
+
+                // Retornamos API primero (prioridad) + Defaults faltantes
+                return [...apiItems, ...missingDefaults];
+            };
+
+            const mergedProducts = smartMerge(defaultProducts, tiposRes.data);
+            const mergedGustos = smartMerge(defaultGustos, gustosRes.data);
+
+            setProducts(mergedProducts);
+            setGustos(mergedGustos);
+
+            // 3. Guardar en localStorage lo fusionado (para que la proxima sea rapido con todo)
+            localStorage.setItem('icecore_products', JSON.stringify(mergedProducts));
+            localStorage.setItem('icecore_gustos', JSON.stringify(mergedGustos));
             localStorage.setItem('icecore_catalog_time', now.toString());
 
         } catch (error) {
@@ -98,10 +122,76 @@ export const CartProvider = ({ children }) => {
         }
     };
 
-    // Auto-fetch al montar el provider (una sola vez por sesion de app)
+    // Auto-fetch al montar el provider
     useEffect(() => {
         fetchCatalog();
     }, []);
+
+    // Auto-Corrección de IDs del Carrito (Sync Cart with Fresh Catalog)
+    // Si el usuario tenía items con IDs viejos (del defaultCatalog) y ahora tenemos IDs nuevos (de la DB),
+    // intentamos matchear por NOMBRE y actualizar los IDs en el carrito automáticamente.
+    useEffect(() => {
+        if (products.length === 0 && gustos.length === 0) return;
+        if (cart.length === 0) return;
+
+        let cartUpdated = false;
+        const newCart = cart.map(item => {
+            let itemChanged = false;
+
+            // 1. Sync Product (Update ID and Price)
+            let newProduct = item.product;
+            // Try match by ID first
+            let matchedProduct = products.find(p => p.id === item.product.id);
+            // If not found, try match by Name
+            if (!matchedProduct) {
+                matchedProduct = products.find(p => p.nombre.toLowerCase().trim() === item.product.nombre.toLowerCase().trim());
+                if (matchedProduct) itemChanged = true; // Found by name, ID changed
+            } else {
+                // Found by ID, check if price changed
+                if (matchedProduct.precio !== item.product.precio) itemChanged = true;
+            }
+
+            if (matchedProduct) newProduct = matchedProduct;
+
+            // 2. Sync Gustos (Update IDs)
+            let newGustos = item.gustos;
+            if (item.gustos && item.gustos.length > 0) {
+                const refreshedGustos = item.gustos.map(g => {
+                    // Try ID Match
+                    const existingGusto = gustos.find(dbG => dbG.id === g.id);
+                    if (existingGusto) return existingGusto;
+
+                    // Try Name Match
+                    const matchedGusto = gustos.find(dbG => dbG.nombre.toLowerCase().trim() === g.nombre.toLowerCase().trim());
+                    if (matchedGusto) {
+                        itemChanged = true;
+                        return matchedGusto;
+                    }
+                    return g;
+                });
+
+                // Compare arrays to see if actually changed
+                const gustosChanged = refreshedGustos.some((g, i) => g.id !== item.gustos[i].id);
+                if (gustosChanged) {
+                    newGustos = refreshedGustos;
+                    itemChanged = true;
+                }
+            }
+
+            if (itemChanged) {
+                cartUpdated = true;
+                // Return updated item with new product (and price) and new gustos
+                return { ...item, product: newProduct, gustos: newGustos, price: newProduct.precio };
+            }
+            return item;
+        });
+
+        if (cartUpdated) {
+            console.log("Carrito sincronizado con nuevos IDs de la Base de Datos 🔄");
+            setCart(newCart);
+        }
+
+    }, [products, gustos]); // Correr cada vez que se actualiza el catálogo (merged)
 
 
     return (

@@ -56,13 +56,6 @@ public class PedidoService {
             TipoProducto tipo = tipoProductoRepository.findById(itemDTO.getTipoProductoId())
                     .orElseThrow(() -> new RuntimeException("Tipo de producto no encontrado"));
 
-            if ("1/4 KILO".equalsIgnoreCase(tipo.getNombre())) {
-                if (itemDTO.getCantidad() < 2) {
-                    throw new RuntimeException("Error: El producto " + tipo.getNombre()
-                            + " requiere al menos 2 unidades.");
-                }
-            }
-
             if (!tipo.getEsPorPeso()) {
                 if (itemDTO.getCantidad() < 5) {
                     throw new RuntimeException("Error: El producto " + tipo.getNombre()
@@ -100,6 +93,22 @@ public class PedidoService {
 
             items.add(item);
             total = total.add(subtotal); // Sumamos al total general
+        }
+
+        // --- VALIDACIONES GLOBALES DE CANTIDAD (Al final, con todos los items
+        // procesados) ---
+        long totalCuartoKilo = items.stream()
+                .filter(i -> {
+                    String nombre = i.getTipoProducto().getNombre().trim();
+                    boolean esCuarto = "1/4 KILO".equalsIgnoreCase(nombre) || "1/4 Kilo".equalsIgnoreCase(nombre);
+                    return esCuarto;
+                })
+                .mapToInt(ItemPedido::getCantidad)
+                .sum();
+
+        if (totalCuartoKilo > 0 && totalCuartoKilo < 2) {
+            throw new RuntimeException("Error: El 1/4 Kilo requiere una compra mínima de 2 unidades en total (tienes "
+                    + totalCuartoKilo + ").");
         }
 
         // 3. Asignamos los items y el precio total al pedido

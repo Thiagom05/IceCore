@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import api from '../../lib/api';
 
+import { useUI } from '../../context/UIContext';
+
 export default function ProductFormModal({ isOpen, onClose, productToEdit, onSave }) {
+    const { showError } = useUI();
     const [formData, setFormData] = useState({
         nombre: '',
         precio: '',
@@ -44,7 +47,7 @@ export default function ProductFormModal({ isOpen, onClose, productToEdit, onSav
             onClose();
         } catch (error) {
             console.error("Error guardando producto:", error);
-            alert("Error al guardar producto.");
+            showError("Error al guardar producto.");
         } finally {
             setLoading(false);
         }

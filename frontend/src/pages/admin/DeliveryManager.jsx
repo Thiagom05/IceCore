@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { User, Phone, Trash2, Plus, DollarSign, RefreshCw, Truck, XCircle, CheckCircle } from 'lucide-react';
 import api from '../../lib/api';
 
+import { useUI } from '../../context/UIContext';
+
 export default function DeliveryManager() {
+    const { showError } = useUI();
     const [repartidores, setRepartidores] = useState([]);
     const [caja, setCaja] = useState({ repartidores: [] });
     const [loading, setLoading] = useState(true);
@@ -97,7 +100,7 @@ export default function DeliveryManager() {
             fetchRoundsData();
         } catch (error) {
             console.error("Error creating round:", error);
-            alert("Error al crear la hoja de ruta");
+            showError("Error al crear la hoja de ruta");
         }
     };
 

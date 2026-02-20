@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import api from '../../lib/api';
 
+import { useUI } from '../../context/UIContext';
+
 export default function GustoFormModal({ isOpen, onClose, gustoToEdit, onSave }) {
+    const { showError } = useUI();
     const [formData, setFormData] = useState({
         nombre: '',
         descripcion: '',
@@ -43,7 +46,7 @@ export default function GustoFormModal({ isOpen, onClose, gustoToEdit, onSave })
             onClose();
         } catch (error) {
             console.error("Error guardando gusto:", error);
-            alert("Error al guardar. Verifica que el nombre no esté duplicado.");
+            showError("Error al guardar. Verifica que el nombre no esté duplicado.");
         } finally {
             setLoading(false);
         }

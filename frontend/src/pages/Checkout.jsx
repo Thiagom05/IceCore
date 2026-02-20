@@ -3,6 +3,7 @@ import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { CreditCard, Banknote, Landmark, Loader2, ArrowLeft } from 'lucide-react';
+import ErrorModal from '../components/ErrorModal';
 
 
 const InputField = ({ label, name, type = "text", required = false, placeholder, value, onChange }) => (
@@ -50,6 +51,17 @@ export default function Checkout() {
     const { cart, cartTotal, clearCart } = useCart();
     const navigate = useNavigate();
 
+    // Estado para el Modal de Error
+    const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
+
+    // Helper para mostrar errores
+    const showError = (msg) => {
+        setErrorModal({ isOpen: true, message: msg });
+    };
+    const closeError = () => {
+        setErrorModal({ ...errorModal, isOpen: false });
+    };
+
     // Formulario de Cliente
     const [formData, setFormData] = useState({
         nombre: '',
@@ -78,7 +90,7 @@ export default function Checkout() {
         const paymentsEnabled = import.meta.env.VITE_ENABLE_PAYMENTS === 'true';
 
         if (!paymentsEnabled) {
-            alert("✨ MODO PORTFOLIO: El pago con Mercado Pago está deshabilitado en esta demostración para evitar transacciones reales.");
+            showError("✨ MODO PORTFOLIO: El pago con Mercado Pago está deshabilitado en esta demostración para evitar transacciones reales.");
             return;
         }
 
@@ -88,7 +100,7 @@ export default function Checkout() {
             window.location.href = res.data.init_point;
         } catch (error) {
             console.error(error);
-            alert("Error al iniciar pago con Mercado Pago");
+            showError("Error al iniciar pago con Mercado Pago");
         } finally {
             setLoading(false);
         }
@@ -148,14 +160,14 @@ export default function Checkout() {
                 window.open(url, '_blank');
             } else {
                 // MODO PORTFOLIO / DEMO
-                alert("✨ MODO PORTFOLIO: En un entorno real, esto abriría WhatsApp con tu pedido.\n\n" + mensaje);
+                showError("✨ MODO PORTFOLIO: En un entorno real, esto abriría WhatsApp con tu pedido.\n\n" + mensaje);
             }
 
             navigate('/');
         } catch (error) {
             console.error("Error al procesar pedido:", error);
             const msg = error.response?.data || "Hubo un error al procesar tu pedido."; // Fix error msg access
-            alert("Error: " + msg);
+            showError(msg);
         } finally {
             setLoading(false);
         }
@@ -165,7 +177,7 @@ export default function Checkout() {
         e.preventDefault();
 
         if (!paymentMethod) {
-            alert("Por favor selecciona un método de pago");
+            showError("Por favor selecciona un método de pago");
             return;
         }
 
@@ -182,6 +194,13 @@ export default function Checkout() {
 
     return (
         <div className="min-h-screen bg-bg-primary pt-24 pb-16 px-6">
+            <ErrorModal
+                isOpen={errorModal.isOpen}
+                onClose={closeError}
+                message={errorModal.message}
+                title="Atención"
+            />
+
             <div className="max-w-3xl mx-auto">
                 <button onClick={() => navigate('/carrito')} className="flex items-center gap-2 text-text-secondary hover:text-[#2C1B18] mb-8 group transition-colors">
                     <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
