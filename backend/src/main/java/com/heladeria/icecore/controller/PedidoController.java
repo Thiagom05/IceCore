@@ -38,10 +38,8 @@ public class PedidoController {
         return ResponseEntity.ok(pedidoService.updateEstado(id, estado));
     }
 
-    @PutMapping("/{id}/repartidor")
-    public ResponseEntity<Pedido> updateRepartidor(@PathVariable Long id,
-            @RequestBody java.util.Map<String, Long> payload) {
-        Long repartidorId = payload.get("repartidorId");
-        return ResponseEntity.ok(pedidoService.updateRepartidor(id, repartidorId));
+    @PatchMapping("/{id}/repartidor")
+    public ResponseEntity<Pedido> updateRepartidor(@PathVariable Long id, @RequestParam String nombre) {
+        return ResponseEntity.ok(pedidoService.updateRepartidor(id, nombre));
     }
 }

@@ -12,6 +12,13 @@ export default function Order() {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [selectedGustos, setSelectedGustos] = useState([]);
     const [quantity, setQuantity] = useState(1);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (!catalogLoading) {
+            setLoading(false);
+        }
+    }, [catalogLoading]);
 
     const handleProductSelect = (producto) => {
         setSelectedProduct(producto);
@@ -43,7 +50,7 @@ export default function Order() {
         setQuantity(1);
     };
 
-    if (catalogLoading && tiposProducto.length === 0) {
+    if (loading) {
         return (
             <div className="min-h-screen flex flex-col justify-center items-center bg-bg-primary text-text-primary">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2C1B18]"></div>
@@ -183,9 +190,6 @@ export default function Order() {
                                 )}
                             </div>
 
-                            {/* Selector de Cantidad (Solo si no es por peso, aunque si es por peso también podría quererse varios del mismo mix, pero asumimos potes pre-armados por ahora solo unitarios o lógica separada. 
-                               El requerimiento decía "para las porciones (esPorPeso=false)".
-                            */}
                             {!selectedProduct.esPorPeso && (
                                 <div className="mb-12 flex items-center justify-between bg-gray-50 p-4 rounded-2xl">
                                     <span className="font-bold text-[#2C1B18] uppercase tracking-wider text-sm">Cantidad</span>

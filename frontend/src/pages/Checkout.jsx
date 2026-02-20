@@ -3,64 +3,14 @@ import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { CreditCard, Banknote, Landmark, Loader2, ArrowLeft } from 'lucide-react';
-import ErrorModal from '../components/ErrorModal';
 
 
-const InputField = ({ label, name, type = "text", required = false, placeholder, value, onChange }) => (
-    <div className="group">
-        <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">{label}</label>
-        <input
-            required={required}
-            type={type}
-            name={name}
-            value={value}
-            onChange={onChange}
-            placeholder={placeholder}
-            className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg"
-        />
-    </div>
-);
-
-const PaymentOption = ({ value, label, subLabel, icon: Icon, selectedValue, onChange }) => (
-    <label className={`
-        cursor-pointer relative p-6 rounded-2xl border-2 transition-all duration-300 flex items-start gap-4 group
-        ${selectedValue === value
-            ? 'border-[#2C1B18] bg-[#2C1B18] text-white shadow-xl shadow-[#2C1B18]/20 transform scale-[1.02]'
-            : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
-        }
-    `}>
-        <input
-            type="radio"
-            name="payment"
-            value={value}
-            checked={selectedValue === value}
-            onChange={() => onChange(value)}
-            className="sr-only"
-        />
-        <div className={`p-3 rounded-full ${selectedValue === value ? 'bg-white/10' : 'bg-gray-100 group-hover:bg-white'} transition-colors`}>
-            <Icon className={`w-6 h-6 ${selectedValue === value ? 'text-white' : 'text-gray-400 group-hover:text-[#2C1B18]'}`} />
-        </div>
-        <div>
-            <span className={`block font-bold text-lg mb-1 ${selectedValue === value ? 'text-white' : 'text-[#2C1B18]'}`}>{label}</span>
-            <span className={`block text-xs font-medium leading-relaxed ${selectedValue === value ? 'text-white/70' : 'text-text-secondary'}`}>{subLabel}</span>
-        </div>
-    </label>
-);
+import { useUI } from '../context/UIContext';
 
 export default function Checkout() {
     const { cart, cartTotal, clearCart } = useCart();
     const navigate = useNavigate();
-
-    // Estado para el Modal de Error
-    const [errorModal, setErrorModal] = useState({ isOpen: false, message: '' });
-
-    // Helper para mostrar errores
-    const showError = (msg) => {
-        setErrorModal({ isOpen: true, message: msg });
-    };
-    const closeError = () => {
-        setErrorModal({ ...errorModal, isOpen: false });
-    };
+    const { showError } = useUI();
 
     // Formulario de Cliente
     const [formData, setFormData] = useState({
@@ -110,7 +60,7 @@ export default function Checkout() {
         const itemsDTO = cart.map(item => ({
             tipoProductoId: item.product.id,
             gustoIds: item.gustos ? item.gustos.map(g => g.id) : [],
-            cantidad: item.quantity || 1
+            cantidad: 1
         }));
 
         const pedidoDTO = {
@@ -138,20 +88,19 @@ export default function Checkout() {
             mensaje += `*Pedido:*\n`;
 
             cart.forEach(item => {
-                mensaje += `- ${item.quantity > 1 ? item.quantity + 'x ' : ''}${item.product.nombre}`;
+                mensaje += `- ${item.product.nombre}`;
                 if (item.gustos && item.gustos.length > 0) {
                     mensaje += ` (${item.gustos.map(g => g.nombre).join(', ')})`;
                 }
-                mensaje += ` - $${item.price * (item.quantity || 1)}\n`;
+                mensaje += ` - $${item.price}\n`;
             });
 
             mensaje += `\n*TOTAL: $${cartTotal}*\n`;
             mensaje += `*Forma de Pago:* ${metodo === 'transferencia' ? 'Transferencia (Envío comprobante)' : 'Efectivo contra entrega'}\n`;
             if (formData.aclaraciones) mensaje += `*Aclaraciones:* ${formData.aclaraciones}`;
 
-            if (formData.aclaraciones) mensaje += `*Aclaraciones:* ${formData.aclaraciones}`;
-
-            const whatsappNumber = import.meta.env.VITE_WHATSAPP_NUMBER;
+            const whatsappNumber = "5492262485095";
+            const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(mensaje)}`;
 
             clearCart();
 
@@ -188,18 +137,50 @@ export default function Checkout() {
         }
     };
 
+    const InputField = ({ label, name, type = "text", required = false, placeholder }) => (
+        <div className="group">
+            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2 group-focus-within:text-[#2C1B18] transition-colors">{label}</label>
+            <input
+                required={required}
+                type={type}
+                name={name}
+                value={formData[name]}
+                onChange={handleChange}
+                placeholder={placeholder}
+                className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg"
+            />
+        </div>
+    );
 
-
-
+    const PaymentOption = ({ value, label, subLabel, icon: Icon }) => (
+        <label className={`
+            cursor-pointer relative p-6 rounded-2xl border-2 transition-all duration-300 flex items-start gap-4 group
+            ${paymentMethod === value
+                ? 'border-[#2C1B18] bg-[#2C1B18] text-white shadow-xl shadow-[#2C1B18]/20 transform scale-[1.02]'
+                : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
+            }
+        `}>
+            <input
+                type="radio"
+                name="payment"
+                value={value}
+                checked={paymentMethod === value}
+                onChange={(e) => setPaymentMethod(e.target.value)}
+                className="sr-only"
+            />
+            <div className={`p-3 rounded-full ${paymentMethod === value ? 'bg-white/10' : 'bg-gray-100 group-hover:bg-white'} transition-colors`}>
+                <Icon className={`w-6 h-6 ${paymentMethod === value ? 'text-white' : 'text-gray-400 group-hover:text-[#2C1B18]'}`} />
+            </div>
+            <div>
+                <span className={`block font-bold text-lg mb-1 ${paymentMethod === value ? 'text-white' : 'text-[#2C1B18]'}`}>{label}</span>
+                <span className={`block text-xs font-medium leading-relaxed ${paymentMethod === value ? 'text-white/70' : 'text-text-secondary'}`}>{subLabel}</span>
+            </div>
+        </label>
+    );
 
     return (
         <div className="min-h-screen bg-bg-primary pt-24 pb-16 px-6">
-            <ErrorModal
-                isOpen={errorModal.isOpen}
-                onClose={closeError}
-                message={errorModal.message}
-                title="Atención"
-            />
+
 
             <div className="max-w-3xl mx-auto">
                 <button onClick={() => navigate('/carrito')} className="flex items-center gap-2 text-text-secondary hover:text-[#2C1B18] mb-8 group transition-colors">
@@ -218,10 +199,10 @@ export default function Checkout() {
                             Datos de Envío
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <InputField label="Nombre Completo" name="nombre" value={formData.nombre} onChange={handleChange} required placeholder="Tu nombre" />
-                            <InputField label="Teléfono / WhatsApp" name="telefono" type="tel" value={formData.telefono} onChange={handleChange} required placeholder="Para coordinar la entrega" />
+                            <InputField label="Nombre Completo" name="nombre" required placeholder="Tu nombre" />
+                            <InputField label="Teléfono / WhatsApp" name="telefono" type="tel" required placeholder="Para coordinar la entrega" />
                             <div className="md:col-span-2">
-                                <InputField label="Dirección de Entrega" name="direccion" value={formData.direccion} onChange={handleChange} required placeholder="Calle, número, piso..." />
+                                <InputField label="Dirección de Entrega" name="direccion" required placeholder="Calle, número, piso..." />
                             </div>
                             <div className="md:col-span-2">
                                 <div className="group">
@@ -251,24 +232,18 @@ export default function Checkout() {
                                 label="Mercado Pago"
                                 subLabel="Tarjetas, Débito o Dinero en cuenta."
                                 icon={CreditCard}
-                                selectedValue={paymentMethod}
-                                onChange={setPaymentMethod}
                             />
                             <PaymentOption
                                 value="transferencia"
                                 label="Transferencia"
                                 subLabel="Te enviaremos los datos por WhatsApp."
                                 icon={Landmark}
-                                selectedValue={paymentMethod}
-                                onChange={setPaymentMethod}
                             />
                             <PaymentOption
                                 value="efectivo"
                                 label="Efectivo"
                                 subLabel="Abonás al recibir tu pedido."
                                 icon={Banknote}
-                                selectedValue={paymentMethod}
-                                onChange={setPaymentMethod}
                             />
                         </div>
                     </section>

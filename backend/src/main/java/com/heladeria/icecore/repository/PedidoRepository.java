@@ -10,6 +10,5 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     // SQL generado: SELECT * FROM pedidos WHERE estado = ?
     List<Pedido> findByEstado(String estado);
 
-    // Obtener pedidos creados después de una fecha (para filtro diario/mensual)
-    List<Pedido> findByFechaAfter(java.time.LocalDateTime date);
+    List<Pedido> findByFechaAfter(java.time.LocalDateTime fecha);
 }

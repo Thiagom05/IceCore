@@ -30,9 +30,6 @@ public class PedidoService {
     @Autowired
     private GustoRepository gustoRepository;
 
-    @Autowired
-    private BillingService billingService;
-
     // @Transactional: Asegura que si algo falla a mitad de camino, NO se guarde
     // nada en la BD (rollback).
     @Transactional
@@ -116,17 +113,7 @@ public class PedidoService {
         pedido.setPrecioTotal(total);
 
         // 4. Guardamos todo en la BD
-        Pedido savedPedido = pedidoRepository.save(pedido);
-
-        // 5. Procesar facturación simulada (Estrategia Fiscal)
-        try {
-            billingService.processOrderBilling(savedPedido);
-        } catch (Exception e) {
-            System.err
-                    .println("Error procesando facturación para pedido " + savedPedido.getId() + ": " + e.getMessage());
-        }
-
-        return savedPedido;
+        return pedidoRepository.save(pedido);
     }
 
     public List<Pedido> findAll() {
@@ -143,15 +130,27 @@ public class PedidoService {
     @Autowired
     private com.heladeria.icecore.repository.RepartidorRepository repartidorRepository;
 
-    public Pedido updateRepartidor(Long id, Long repartidorId) {
+    public com.heladeria.icecore.entity.Repartidor findRepartidorByName(String nombre) {
+        // Implement logic to find repartidor by name if needed, or change
+        // updateRepartidor logic
+        // For simplicity, let's assume updateRepartidor now takes ID or we find by name
+        return repartidorRepository.findAll().stream()
+                .filter(r -> r.getNombre().equalsIgnoreCase(nombre))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public Pedido updateRepartidor(Long id, String nombreRepartidor) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido no encontrado id: " + id));
 
-        if (repartidorId != null) {
-            com.heladeria.icecore.entity.Repartidor repartidor = repartidorRepository.findById(repartidorId)
-                    .orElseThrow(() -> new RuntimeException("Repartidor no encontrado"));
-
-            pedido.setRepartidor(repartidor);
+        if (nombreRepartidor != null && !nombreRepartidor.isEmpty()) {
+            com.heladeria.icecore.entity.Repartidor rep = findRepartidorByName(nombreRepartidor);
+            if (rep == null) {
+                // If not found, maybe create or throw? For now, throw.
+                throw new RuntimeException("Repartidor no encontrado: " + nombreRepartidor);
+            }
+            pedido.setRepartidor(rep);
             pedido.setEstado("EN_CAMINO");
         } else {
             pedido.setRepartidor(null);

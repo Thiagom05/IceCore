@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../lib/api';
 import { Sparkles, Snowflake } from 'lucide-react';
-import { useCart } from '../context/CartContext';
 
 export default function Catalog() {
-    const { gustos, catalogLoading } = useCart();
-    // const [loading, setLoading] = useState(true); // Ya no es necesario estado local
-    const loading = catalogLoading && gustos.length === 0;
+    const [gustos, setGustos] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        api.get('/gustos/activos')
+            .then(response => {
+                setGustos(response.data);
+                setLoading(false);
+            })
+            .catch(error => {
+                console.error("Error al cargar gustos:", error);
+                setLoading(false);
+            });
+    }, []);
 
     // Agrupar gustos por categoría y ordenar
     const groupedGustos = gustos.reduce((acc, gusto) => {

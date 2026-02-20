@@ -11,8 +11,8 @@ import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import LoginPage from './pages/admin/LoginPage';
 import Dashboard from './pages/admin/Dashboard';
-import ProtectedRoute from './components/ProtectedRoute';
 import BillingConfig from './pages/admin/BillingConfig';
+import ProtectedRoute from './components/ProtectedRoute';
 
 import { Instagram, MapPin } from 'lucide-react';
 

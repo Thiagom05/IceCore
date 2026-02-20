@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../lib/api';
-import { LogOut, Plus, Search, CheckCircle, XCircle, Edit2, IceCream, Package, ShoppingBag, Truck, Calendar, Clock, DollarSign, User, MapPin, Printer } from 'lucide-react';
+import { LogOut, Plus, Search, CheckCircle, XCircle, Edit2, IceCream, Package, ShoppingBag, Truck, Calendar, Clock, DollarSign, User, MapPin } from 'lucide-react';
 import GustoFormModal from './GustoFormModal';
 import ProductFormModal from './ProductFormModal';
 import DeliveryManager from './DeliveryManager';
+import BillingConfig from './BillingConfig';
 import { defaultGustos, defaultProducts } from '../../data/defaultCatalog';
+
+import { useUI } from '../../context/UIContext';
 
 export default function Dashboard() {
     const { logout, user } = useAuth();
+    const { showError } = useUI();
 
     // Data State
     const [gustos, setGustos] = useState([]);
@@ -18,10 +22,8 @@ export default function Dashboard() {
     // UI State
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [activeTab, setActiveTab] = useState('gustos'); // 'gustos' | 'productos' | 'pedidos'
     const [viewMode, setViewMode] = useState('today'); // 'today' | 'history'
-    const [billingPeriod, setBillingPeriod] = useState('daily'); // 'daily' | 'monthly'
-    const [activeTab, setActiveTab] = useState('pedidos'); // 'pedidos' | 'gustos' | 'productos' | 'repartidores'
-    const [billingStats, setBillingStats] = useState({ targetPercentage: 0, currentPercentage: 0 });
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,10 +31,7 @@ export default function Dashboard() {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [currentProduct, setCurrentProduct] = useState(null);
 
-
-    const [repartidoresList, setRepartidoresList] = useState([]);
-
-    // const REPARTIDORES = ["Luis", "Claudio", "Nehuen"]; // Deprecated
+    const REPARTIDORES = ["Luis", "Claudio", "Matias"];
 
     useEffect(() => {
         fetchData();
@@ -46,15 +45,11 @@ export default function Dashboard() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            // Cargar datos críticos primero
             await Promise.all([fetchGustos(), fetchProductos(), fetchPedidos()]);
-            fetchRepartidores();
         } catch (error) {
             console.error("Error cargando datos:", error);
         } finally {
             setLoading(false);
-            // Cargar datos no críticos en segundo plano
-            fetchBillingStats().catch(e => console.error("Error stats", e));
         }
     };
 
@@ -69,15 +64,6 @@ export default function Dashboard() {
     const fetchProductos = async () => {
         const res = await api.get('/tipos-producto');
         setProductos(res.data.sort((a, b) => a.precio - b.precio));
-    };
-
-    const fetchRepartidores = async () => {
-        try {
-            const res = await api.get('/repartidores/activos');
-            setRepartidoresList(res.data);
-        } catch (error) {
-            console.error("Error fetching repartidores:", error);
-        }
     };
 
 
@@ -121,19 +107,6 @@ export default function Dashboard() {
         }
     };
 
-    const fetchBillingStats = async () => {
-        try {
-            const res = await api.get(`/billing/stats?period=${billingPeriod}`);
-            setBillingStats(res.data);
-        } catch (error) {
-            console.error("Error fetching billing stats:", error);
-        }
-    };
-
-    useEffect(() => {
-        fetchBillingStats();
-    }, [billingPeriod]); // Recargar stats cuando cambia el periodo
-
     // --- LOGICA GUSTOS ---
     const handleCreateGusto = () => { setCurrentGusto(null); setIsModalOpen(true); };
     const handleEditGusto = (gusto) => { setCurrentGusto(gusto); setIsModalOpen(true); };
@@ -171,7 +144,7 @@ export default function Dashboard() {
             );
 
             if (toImport.length === 0) {
-                alert("Todos los sabores por defecto ya existen en la base de datos.");
+                showError("Todos los sabores por defecto ya existen en la base de datos.", "Información");
                 setLoading(false);
                 return;
             }
@@ -191,11 +164,11 @@ export default function Dashboard() {
                 count++;
             }
 
-            alert(`¡Éxito! Se importaron ${count} sabores nuevos.`);
+            showError(`¡Éxito! Se importaron ${count} sabores nuevos.`, "Importación Completada");
             fetchGustos(); // Recargar tabla
         } catch (error) {
             console.error("Error importando defaults:", error);
-            alert("Hubo un error al importar algunos sabores.");
+            showError("Hubo un error al importar algunos sabores.");
         } finally {
             setLoading(false);
         }
@@ -212,7 +185,7 @@ export default function Dashboard() {
             );
 
             if (toImport.length === 0) {
-                alert("Todos los productos por defecto ya existen.");
+                showError("Todos los productos por defecto ya existen.", "Información");
                 setLoading(false);
                 return;
             }
@@ -228,11 +201,11 @@ export default function Dashboard() {
                 await api.post('/tipos-producto', payload);
                 count++;
             }
-            alert(`¡Éxito! Se importaron ${count} productos nuevos.`);
+            showError(`¡Éxito! Se importaron ${count} productos nuevos.`, "Importación Completada");
             fetchProductos();
         } catch (error) {
             console.error("Error importando productos:", error);
-            alert("Error al importar productos.");
+            showError("Error al importar productos.");
         } finally {
             setLoading(false);
         }
@@ -254,92 +227,32 @@ export default function Dashboard() {
         }
     };
 
-    const handleAssignRepartidor = async (pedidoId, repartidorId) => {
+    const handleRepartidorChange = async (pedidoId, nuevoRepartidor) => {
         try {
-            await api.put(`/pedidos/${pedidoId}/repartidor`, { repartidorId: repartidorId ? parseInt(repartidorId) : null });
-            fetchPedidos(); // Recargar pedidos
-            fetchRepartidores(); // Recargar reparto
+            // Actualización optimista (para que se vea instantáneo en pantalla)
+            setPedidos(pedidos.map(p => p.id === pedidoId ? { ...p, repartidor: nuevoRepartidor } : p));
+
+            // Llamada al backend
+            await api.patch(`/pedidos/${pedidoId}/repartidor`, null, {
+                params: { nombre: nuevoRepartidor }
+            });
         } catch (error) {
             console.error("Error asignando repartidor:", error);
-            alert("Error al asignar repartidor");
+            fetchPedidos(); // Si falla, recargamos para ver el dato real
         }
-    };
-
-    const printOrder = (pedido) => {
-        const printWindow = window.open('', '', 'width=350,height=600');
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Ticket Pedido #${pedido.id}</title>
-                    <style>
-                        @page { size: auto; margin: 0mm; }
-                        body {
-                            font-family: 'Courier New', monospace;
-                            width: 80mm;
-                            margin: 0;
-                            padding: 5mm;
-                            font-size: 14px;
-                            color: black;
-                            background-color: white;
-                        }
-                        .header { text-align: center; margin-bottom: 10px; }
-                        .divider { border-top: 1px dashed black; margin: 10px 0; }
-                        .item { margin-bottom: 5px; }
-                        .total { font-size: 18px; font-weight: bold; text-align: right; margin-top: 10px; }
-                        .info { margin-bottom: 5px; font-size: 12px; }
-                        h2 { margin: 0 0 5px 0; font-size: 20px; }
-                        p { margin: 2px 0; }
-                        .cut-line { text-align: center; margin-top: 20px; border-bottom: 1px dotted black; padding-bottom: 10px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h2>IceCore</h2>
-                        <p>Pedido #${pedido.id}</p>
-                        <p>${new Date(pedido.fecha).toLocaleString('es-AR')}</p>
-                    </div>
-                    <div class="divider"></div>
-                    <div class="info">
-                        <p><strong>Cliente:</strong> ${pedido.nombreCliente} ${pedido.apellidoCliente}</p>
-                        <p><strong>Dirección:</strong> ${pedido.direccion}</p>
-                        <p><strong>Teléfono:</strong> ${pedido.telefono}</p>
-                        <p><strong>Pago:</strong> ${pedido.metodoPago}</p>
-                        <p><strong>Repartidor:</strong> ${pedido.repartidor || 'Sin asignar'}</p>
-                    </div>
-                    <div class="divider"></div>
-                    ${pedido.items.map(item => `
-                        <div class="item">
-                            <div style="display:flex; justify-content:space-between; font-weight: bold;">
-                                <span>${item.cantidad}x ${item.tipoProducto.nombre}</span>
-                            </div>
-                            ${item.gustos.length > 0 ? `<div style="padding-left: 10px; font-size: 12px; margin-top: 2px;">- ${item.gustos.map(g => g.nombre).join(', ')}</div>` : ''}
-                        </div>
-                    `).join('')}
-                    <div class="divider"></div>
-                    <div class="total">Total: $${pedido.precioTotal.toLocaleString()}</div>
-                    <div class="cut-line">
-                        <p>www.icecore.com</p>
-                    </div>
-                </body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 500);
     };
 
     const StatusBadge = ({ status }) => {
         const styles = {
             'PENDIENTE': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+            'EN_PREPARACION': 'bg-blue-50 text-blue-700 border-blue-200',
             'LISTO': 'bg-purple-50 text-purple-700 border-purple-200',
             'ENTREGADO': 'bg-green-50 text-green-700 border-green-200',
             'CANCELADO': 'bg-red-50 text-red-700 border-red-200',
         };
         const labels = {
             'PENDIENTE': 'Pendiente',
+            'EN_PREPARACION': 'Preparando',
             'LISTO': 'Listo',
             'ENTREGADO': 'Entregado',
             'CANCELADO': 'Cancelado',
@@ -400,34 +313,12 @@ export default function Dashboard() {
                                 <p className="text-[10px] text-text-secondary font-medium uppercase tracking-widest">Pura Vida</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                            {/* Widget de Facturación Resumido */}
-                            <div className="hidden md:flex items-center gap-3 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => setBillingPeriod(prev => prev === 'daily' ? 'monthly' : 'daily')}>
-                                <div className="flex flex-col items-end leading-none">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase">Obj. {billingPeriod === 'daily' ? 'Diario' : 'Mensual'}</span>
-                                    <span className="text-xs font-black text-[#2C1B18]">{billingStats.targetPercentage}%</span>
-                                </div>
-                                <div className="h-6 w-px bg-gray-200"></div>
-                                <div className="flex flex-col leading-none">
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase">Real</span>
-                                    <span className={`text-xs font-black ${billingStats.currentPercentage < billingStats.targetPercentage ? 'text-red-500' : 'text-green-600'}`}>
-                                        {billingStats.currentPercentage}%
-                                    </span>
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={logout}
-                                className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-red-500 hover:bg-red-50 rounded-lg transition"
-                            >
-                                <LogOut size={16} /> Salir
-                            </button>
-                        </div>
-                    </div>
-                    <div className="flex justify-end px-6 pb-2">
-                        <a href="/admin/facturacion" className="text-[10px] font-bold uppercase tracking-wider text-[#2C1B18] hover:underline flex items-center gap-1">
-                            Configurar Facturación &rarr;
-                        </a>
+                        <button
+                            onClick={logout}
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                        >
+                            <LogOut size={16} /> Salir
+                        </button>
                     </div>
                 </div>
             </nav>
@@ -438,8 +329,9 @@ export default function Dashboard() {
                 <div className="flex flex-wrap gap-4 mb-10 justify-center">
                     <TabButton id="gustos" icon={IceCream} label="Sabores" />
                     <TabButton id="productos" icon={Package} label="Productos" />
+                    <TabButton id="reparto" icon={Truck} label="Reparto" />
+                    <TabButton id="facturacion" icon={DollarSign} label="Facturación" />
                     <TabButton id="pedidos" icon={ShoppingBag} label="Pedidos" liveCount={activeTab !== 'pedidos'} />
-                    <TabButton id="repartidores" icon={Truck} label="Repartidores" />
                 </div>
 
                 {/* CONTENIDO TAB GUSTOS */}
@@ -563,6 +455,20 @@ export default function Dashboard() {
                     </div>
                 )}
 
+                {/* CONTENIDO TAB REPARTO */}
+                {activeTab === 'reparto' && (
+                    <div className="animate-fade-in-up">
+                        <DeliveryManager />
+                    </div>
+                )}
+
+                {/* CONTENIDO TAB FACTURACION */}
+                {activeTab === 'facturacion' && (
+                    <div className="animate-fade-in-up">
+                        <BillingConfig />
+                    </div>
+                )}
+
                 {/* CONTENIDO TAB PEDIDOS */}
                 {activeTab === 'pedidos' && (
                     <div className="animate-fade-in-up">
@@ -642,14 +548,7 @@ export default function Dashboard() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="bg-gray-50 rounded-xl p-4 mb-6 relative group/ticket">
-                                                        <button
-                                                            onClick={() => printOrder(pedido)}
-                                                            className="absolute top-2 right-2 p-2 bg-white text-gray-400 hover:text-[#2C1B18] rounded-lg shadow-sm hover:shadow-md transition-all opacity-0 group-hover/ticket:opacity-100"
-                                                            title="Imprimir Comanda"
-                                                        >
-                                                            <Printer size={16} />
-                                                        </button>
+                                                    <div className="bg-gray-50 rounded-xl p-4 mb-6">
                                                         <ul className="space-y-3">
                                                             {pedido.items.map((item, idx) => (
                                                                 <li key={idx} className="text-sm">
@@ -675,6 +574,7 @@ export default function Dashboard() {
                                                                 className="w-full text-xs font-medium border-gray-200 rounded-lg focus:ring-[#2C1B18] focus:border-[#2C1B18] bg-white py-2"
                                                             >
                                                                 <option value="PENDIENTE">PENDIENTE</option>
+                                                                <option value="EN_PREPARACION">EN PREPARACIÓN</option>
                                                                 <option value="LISTO">LISTO</option>
                                                                 <option value="ENTREGADO">ENTREGADO</option>
                                                                 <option value="CANCELADO">CANCELADO</option>
@@ -682,11 +582,20 @@ export default function Dashboard() {
                                                         </div>
                                                         <div>
                                                             <label className="text-[10px] font-bold uppercase tracking-wider text-text-secondary mb-1 block">Repartidor</label>
-                                                            <div className={`w-full text-xs font-medium border border-gray-100 rounded-lg py-2 px-3 flex items-center gap-2
-                                                                ${pedido.repartidor ? 'bg-green-50 text-green-800 border-green-200' : 'bg-gray-50 text-gray-400'}
-                                                            `}>
-                                                                <Truck size={14} />
-                                                                {pedido.repartidor ? pedido.repartidor.nombre : "Sin Asignar"}
+                                                            <div className="relative">
+                                                                <select
+                                                                    value={pedido.repartidor || ""}
+                                                                    onChange={(e) => handleRepartidorChange(pedido.id, e.target.value)}
+                                                                    className={`w-full text-xs font-medium border-gray-200 rounded-lg focus:ring-[#2C1B18] focus:border-[#2C1B18] py-2 pl-8 appearance-none
+                                                                        ${pedido.repartidor ? 'bg-green-50 text-green-800 border-green-200' : 'bg-white text-gray-500'}
+                                                                    `}
+                                                                >
+                                                                    <option value="">Sin Asignar</option>
+                                                                    {REPARTIDORES.map((repa) => (
+                                                                        <option key={repa} value={repa}>{repa}</option>
+                                                                    ))}
+                                                                </select>
+                                                                <Truck className={`absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 ${pedido.repartidor ? 'text-green-600' : 'text-gray-400'}`} />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -697,13 +606,6 @@ export default function Dashboard() {
                                 ))
                             )}
                         </div>
-                    </div>
-                )}
-
-                {/* CONTENIDO TAB REPARTIDORES */}
-                {activeTab === 'repartidores' && (
-                    <div className="animate-fade-in-up">
-                        <DeliveryManager />
                     </div>
                 )}
             </div>

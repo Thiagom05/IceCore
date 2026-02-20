@@ -46,7 +46,7 @@ export const CartProvider = ({ children }) => {
         setCart([]);
     };
 
-    const cartTotal = cart.reduce((total, item) => total + (item.price * (item.quantity || 1)), 0);
+    const cartTotal = cart.reduce((total, item) => total + item.price, 0);
     const cartCount = cart.length;
 
     // --- CATALOGO CACHEADO ---
@@ -204,8 +204,7 @@ export const CartProvider = ({ children }) => {
             cartCount,
             products,
             gustos,
-            catalogLoading,
-            fetchCatalog // Exponer para recargar manual si se desea
+            catalogLoading
         }}>
             {children}
         </CartContext.Provider>

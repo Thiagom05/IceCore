@@ -33,9 +33,6 @@ public class Pedido {
 
     private BigDecimal precioTotal;
 
-    // @Column(name = "repartidor")
-    // private String repartidor;
-
     @ManyToOne
     @JoinColumn(name = "repartidor_id")
     private Repartidor repartidor;
@@ -56,10 +53,6 @@ public class Pedido {
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemPedido> items = new ArrayList<>();
 
-    // Relación con Factura (si existe)
-    @OneToOne(mappedBy = "pedido", cascade = CascadeType.ALL)
-    private Invoice invoice;
-
     // Esto se ejecuta justo antes de guardar en la DB
     @PrePersist
     public void prePersist() {
@@ -68,5 +61,8 @@ public class Pedido {
             this.estado = "PENDIENTE";
         }
     }
+
+    @OneToOne(mappedBy = "pedido", cascade = CascadeType.ALL)
+    private Invoice invoice;
 
 }
