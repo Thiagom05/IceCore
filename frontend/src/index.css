@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/* Importar fuente Inter desde Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;900&display=swap');
+
+@theme {
+  /* Paleta Minimalista - Blanco y Negro */
+
+  /* Backgrounds */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f9f9f9;
+  /* Gris muy tenue para alternar secciones */
+  --color-bg-inverse: #2C1B18;
+  /* Chocolate Oscuro Premium */
+
+  /* Textos */
+  --color-text-primary: #2C1B18;
+  /* Chocolate Oscuro para lectura */
+  --color-text-secondary: #666666;
+  /* Gris medio para subtítulos */
+  --color-text-inverse: #ffffff;
+  /* Texto blanco sobre fondo oscuro */
+
+  /* Bordes y Líneas */
+  --color-border-light: #e5e5e5;
+  --color-border-dark: #2C1B18;
+
+  /* Accent (Acentos sutiles) */
+  --color-accent: #2C1B18;
+  /* Acentos en Chocolate */
+
+  /* Configurar Inter como fuente Sans principal */
+  --font-sans: "Inter", sans-serif;
+
+  /* Override de Serif (opcional, por si queda algún remanente) */
+  --font-serif: "Inter", serif;
+
+  /* Animaciones */
+  --animate-fade-in: fade-in 1s ease-out forwards;
+  --animate-fade-in-up: fade-in-up 1s ease-out forwards;
+  --animate-marquee: marquee 20s linear infinite;
+  --animate-marquee-fast: marquee-mobile 10s linear infinite;
+
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+    }
+
+    100% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* Marquee para mobile: cubre exactamente 1 set de frases únicas (-25% de 4 copias) */
+  @keyframes marquee-mobile {
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(-120%);
+    }
+  }
+}
+
+@layer base {
+
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  .lenis.lenis-scrolling iframe {
+    pointer-events: none;
+  }
+
+  body {
+    @apply antialiased bg-bg-primary text-text-primary font-sans selection:bg-black selection:text-white;
+  }
+
+  /* Estilos para tipografía premium */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold tracking-tight text-text-primary;
+  }
+}
