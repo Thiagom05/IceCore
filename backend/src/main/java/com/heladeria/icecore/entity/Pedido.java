@@ -25,6 +25,7 @@ public class Pedido {
     private String apellidoCliente;
     private String direccion;
     private String telefono;
+    private String horaEntrega; // Franja horaria elegida por el cliente
 
     private String metodoPago; // "Efectivo", "MP", etc.
 

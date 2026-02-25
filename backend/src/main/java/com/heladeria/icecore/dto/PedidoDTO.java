@@ -12,6 +12,7 @@ public class PedidoDTO {
     private String direccion;
     private String telefono;
     private String metodoPago;
+    private String horaEntrega; // Franja horaria elegida por el cliente
 
     // La lista de ítems (potes) que está pidiendo
     private List<ItemPedidoDTO> items;

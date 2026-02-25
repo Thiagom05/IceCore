@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { useCart } from '../context/CartContext';
 import { useUI } from '../context/UIContext';
-import { ChevronRight, Check, Plus, Minus } from 'lucide-react';
+import { ChevronRight, Check, Plus, Minus, Clock } from 'lucide-react';
+import { useBusinessHours } from '../hooks/HorariosPedidos';
 
 export default function Order() {
     const { addToCart, products: tiposProducto, gustos, catalogLoading } = useCart();
     const { showError } = useUI();
+    const { isOpen, getNextOpeningInfo } = useBusinessHours();
 
     const [step, setStep] = useState(1);
     const [selectedProduct, setSelectedProduct] = useState(null);
@@ -62,6 +64,18 @@ export default function Order() {
     return (
         <div className="min-h-screen bg-bg-primary pt-24 pb-16 px-6">
             <div className="max-w-5xl mx-auto">
+
+                {/* Banner de cerrado (no bloquea, solo informa) */}
+                {!isOpen && (
+                    <div className="mb-8 flex items-center gap-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl px-6 py-4 animate-fade-in-up">
+                        <Clock className="w-5 h-5 shrink-0 text-amber-600" />
+                        <div>
+                            <p className="font-bold text-sm">Estamos cerrados en este momento</p>
+                            <p className="text-xs mt-0.5">Abrimos {getNextOpeningInfo()} — Podés armar tu pedido y elegir la hora de entrega en el checkout.</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Header & Steps */}
                 <div className="text-center mb-16 animate-fade-in-up">
                     <span className="text-xs font-bold tracking-[0.3em] uppercase text-text-secondary">

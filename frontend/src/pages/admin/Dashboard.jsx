@@ -18,12 +18,15 @@ export default function Dashboard() {
     const [gustos, setGustos] = useState([]);
     const [productos, setProductos] = useState([]);
     const [pedidos, setPedidos] = useState([]);
+    const [businessHours, setBusinessHours] = useState(null);
+    const [savingHours, setSavingHours] = useState(false);
 
     // UI State
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState('gustos'); // 'gustos' | 'productos' | 'pedidos'
-    const [viewMode, setViewMode] = useState('today'); // 'today' | 'history'
+    const [activeTab, setActiveTab] = useState('gustos');
+    const [viewMode, setViewMode] = useState('today');
+    const [dismissedIds, setDismissedIds] = useState(new Set()); // IDs de pedidos cancelados y ocultados
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -45,7 +48,7 @@ export default function Dashboard() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            await Promise.all([fetchGustos(), fetchProductos(), fetchPedidos()]);
+            await Promise.all([fetchGustos(), fetchProductos(), fetchPedidos(), fetchBusinessHours()]);
         } catch (error) {
             console.error("Error cargando datos:", error);
         } finally {
@@ -66,6 +69,41 @@ export default function Dashboard() {
         setProductos(res.data.sort((a, b) => a.precio - b.precio));
     };
 
+    const fetchBusinessHours = async () => {
+        try {
+            const res = await api.get('/business-hours');
+            setBusinessHours(res.data);
+        } catch (error) {
+            console.warn("No se pudieron cargar los horarios.");
+        }
+    };
+
+    const saveBusinessHours = async () => {
+        if (!businessHours) return;
+        setSavingHours(true);
+        try {
+            await api.put('/business-hours', businessHours);
+            showError("Horarios guardados correctamente.", "✅ Guardado");
+        } catch (error) {
+            console.error("Error guardando horarios:", error);
+            showError("No se pudieron guardar los horarios.");
+        } finally {
+            setSavingHours(false);
+        }
+    };
+
+    // Convierte minutos a "HH:MM" para mostrar en inputs
+    const minsToTimeStr = (mins) => {
+        const h = Math.floor(mins / 60) % 24;
+        const m = mins % 60;
+        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    };
+
+    // Convierte "HH:MM" a minutos desde medianoche
+    const timeStrToMins = (str) => {
+        const [h, m] = str.split(':').map(Number);
+        return h * 60 + m;
+    };
 
     // Helper para agrupar pedidos por fecha
     const groupPedidosByDate = (pedidosList) => {
@@ -88,12 +126,12 @@ export default function Dashboard() {
     // Filtrar pedidos según el modo de vista
     const getFilteredPedidos = () => {
         const today = new Date().toLocaleDateString('es-AR');
+        let result = pedidos.filter(p => !dismissedIds.has(p.id));
 
         if (viewMode === 'today') {
-            return pedidos.filter(p => new Date(p.fecha).toLocaleDateString('es-AR') === today);
+            return result.filter(p => new Date(p.fecha).toLocaleDateString('es-AR') === today);
         } else {
-            // En historial mostramos TODOS (o podríamos excluir los de hoy, pero mostrar todos es mejor para "ver todo")
-            return pedidos;
+            return result;
         }
     };
 
@@ -221,6 +259,13 @@ export default function Dashboard() {
             // Optimistic update
             setPedidos(pedidos.map(p => p.id === pedidoId ? { ...p, estado: newStatus } : p));
             await api.patch(`/pedidos/${pedidoId}/estado`, null, { params: { estado: newStatus } });
+
+            // Si se cancela, ocultar la tarjeta tras 5 segundos (persiste aunque el polling recargue)
+            if (newStatus === 'CANCELADO') {
+                setTimeout(() => {
+                    setDismissedIds(prev => new Set([...prev, pedidoId]));
+                }, 5000);
+            }
         } catch (error) {
             console.error("Error actualizando estado:", error);
             fetchPedidos();
@@ -331,6 +376,7 @@ export default function Dashboard() {
                     <TabButton id="productos" icon={Package} label="Productos" />
                     <TabButton id="reparto" icon={Truck} label="Reparto" />
                     <TabButton id="facturacion" icon={DollarSign} label="Facturación" />
+                    <TabButton id="horarios" icon={Clock} label="Horarios" />
                     <TabButton id="pedidos" icon={ShoppingBag} label="Pedidos" liveCount={activeTab !== 'pedidos'} />
                 </div>
 
@@ -469,6 +515,98 @@ export default function Dashboard() {
                     </div>
                 )}
 
+                {/* CONTENIDO TAB HORARIOS */}
+                {activeTab === 'horarios' && (
+                    <div className="animate-fade-in-up max-w-2xl mx-auto">
+                        <h2 className="text-3xl font-bold text-[#2C1B18] mb-2">Horarios de Atención</h2>
+                        <p className="text-text-secondary text-sm mb-8">Configurá los turnos de la heladería. Los clientes solo podrán elegir slots dentro de estos horarios.</p>
+
+                        {businessHours ? (
+                            <div className="bg-white rounded-2xl shadow-xl shadow-[#2C1B18]/5 border border-gray-100 p-8 space-y-8">
+
+                                {/* Turno 1 */}
+                                <div>
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-text-secondary mb-4">Turno 1 (Mediodía)</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">Apertura</label>
+                                            <input
+                                                type="time"
+                                                value={minsToTimeStr(businessHours.aperturaT1)}
+                                                onChange={(e) => setBusinessHours({ ...businessHours, aperturaT1: timeStrToMins(e.target.value) })}
+                                                className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] rounded-t-lg"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">Cierre</label>
+                                            <input
+                                                type="time"
+                                                value={minsToTimeStr(businessHours.cierreT1)}
+                                                onChange={(e) => setBusinessHours({ ...businessHours, cierreT1: timeStrToMins(e.target.value) })}
+                                                className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] rounded-t-lg"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Turno 2 */}
+                                <div>
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-text-secondary mb-4">Turno 2 (Noche)</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">Apertura</label>
+                                            <input
+                                                type="time"
+                                                value={minsToTimeStr(businessHours.aperturaT2)}
+                                                onChange={(e) => setBusinessHours({ ...businessHours, aperturaT2: timeStrToMins(e.target.value) })}
+                                                className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] rounded-t-lg"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">Cierre</label>
+                                            <input
+                                                type="time"
+                                                value={minsToTimeStr(businessHours.cierreT2 % 1440 === 0 ? 0 : businessHours.cierreT2)}
+                                                onChange={(e) => {
+                                                    const mins = timeStrToMins(e.target.value);
+                                                    // Si el cierre es medianoche (00:00) lo guardamos como 1440
+                                                    setBusinessHours({ ...businessHours, cierreT2: mins === 0 ? 1440 : mins });
+                                                }}
+                                                className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] rounded-t-lg"
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-text-secondary mt-2">💡 Para cierre a medianoche poné 00:00</p>
+                                </div>
+
+                                {/* Intervalo */}
+                                <div>
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-text-secondary mb-4">Intervalo entre Slots</h3>
+                                    <select
+                                        value={businessHours.intervaloMinutos}
+                                        onChange={(e) => setBusinessHours({ ...businessHours, intervaloMinutos: parseInt(e.target.value) })}
+                                        className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] rounded-t-lg"
+                                    >
+                                        <option value={15}>Cada 15 minutos</option>
+                                        <option value={30}>Cada 30 minutos</option>
+                                        <option value={60}>Cada 1 hora</option>
+                                    </select>
+                                </div>
+
+                                <button
+                                    onClick={saveBusinessHours}
+                                    disabled={savingHours}
+                                    className="w-full py-4 bg-[#2C1B18] text-white font-bold rounded-xl hover:bg-black hover:scale-[1.01] transition-all shadow-lg shadow-[#2C1B18]/20 cursor-pointer disabled:opacity-70"
+                                >
+                                    {savingHours ? 'Guardando...' : 'Guardar Horarios'}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 text-text-secondary">Cargando horarios...</div>
+                        )}
+                    </div>
+                )}
+
                 {/* CONTENIDO TAB PEDIDOS */}
                 {activeTab === 'pedidos' && (
                     <div className="animate-fade-in-up">
@@ -520,8 +658,14 @@ export default function Dashboard() {
                                                             </div>
                                                             <div className="flex items-center gap-2 text-xs text-text-secondary font-medium">
                                                                 <Clock size={12} />
-                                                                {new Date(pedido.fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                                                                Pedido: {new Date(pedido.fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                                                             </div>
+                                                            {pedido.horaEntrega && (
+                                                                <div className="flex items-center gap-2 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg mt-1 w-fit">
+                                                                    <Clock size={11} />
+                                                                    Entrega: {pedido.horaEntrega}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         <div className="text-right">
                                                             <div className="flex items-center justify-end gap-1 text-[#2C1B18] font-black text-xl">

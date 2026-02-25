@@ -42,6 +42,7 @@ public class PedidoService {
         pedido.setDireccion(pedidoDTO.getDireccion());
         pedido.setTelefono(pedidoDTO.getTelefono());
         pedido.setMetodoPago(pedidoDTO.getMetodoPago());
+        pedido.setHoraEntrega(pedidoDTO.getHoraEntrega());
 
         BigDecimal total = BigDecimal.ZERO;
         List<ItemPedido> items = new ArrayList<>();

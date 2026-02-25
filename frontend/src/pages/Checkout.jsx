@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-import { CreditCard, Banknote, Landmark, Loader2, ArrowLeft } from 'lucide-react';
+import { CreditCard, Banknote, Landmark, Loader2, ArrowLeft, Clock } from 'lucide-react';
 import { useUI } from '../context/UIContext';
+import { useBusinessHours } from '../hooks/HorariosPedidos';
 
 // ─── Componentes fuera del padre para evitar re-mount en cada re-render ────────
 
@@ -54,6 +55,7 @@ export default function Checkout() {
     const { cart, cartTotal, clearCart } = useCart();
     const navigate = useNavigate();
     const { showError } = useUI();
+    const { availableSlots, nextSlotLabel, isOpen } = useBusinessHours();
 
     // Formulario de Cliente
     const [formData, setFormData] = useState({
@@ -62,6 +64,16 @@ export default function Checkout() {
         direccion: '',
         aclaraciones: ''
     });
+
+    // Horario de entrega elegido por el cliente
+    const [deliverySlot, setDeliverySlot] = useState('');
+
+    // Pre-seleccionar el primer slot disponible cuando se carguen los datos
+    useEffect(() => {
+        if (availableSlots.length > 0 && !deliverySlot) {
+            setDeliverySlot(availableSlots[0].value);
+        }
+    }, [availableSlots]);
 
     // Método de Pago seleccionado
     const [paymentMethod, setPaymentMethod] = useState('');
@@ -113,6 +125,7 @@ export default function Checkout() {
             direccion: formData.direccion,
             telefono: formData.telefono,
             metodoPago: metodo,
+            horaEntrega: deliverySlot,
             items: itemsDTO
         };
 
@@ -128,7 +141,8 @@ export default function Checkout() {
             let mensaje = `Hola! Quiero realizar un pedido en Pura Vida (Pedido #${pedidoGuardado.id})\n\n`;
             mensaje += `*Cliente:* ${formData.nombre}\n`;
             mensaje += `*Dirección:* ${formData.direccion}\n`;
-            mensaje += `*Teléfono:* ${formData.telefono}\n\n`;
+            mensaje += `*Teléfono:* ${formData.telefono}\n`;
+            mensaje += `*Hora de entrega:* ${deliverySlot}\n\n`;
             mensaje += `*Pedido:*\n`;
 
             cart.forEach(item => {
@@ -189,13 +203,41 @@ export default function Checkout() {
                 </button>
 
                 <h1 className="text-4xl font-black text-[#2C1B18] tracking-tighter mb-2">FINALIZAR PEDIDO</h1>
-                <p className="text-text-secondary mb-12">Completa tus datos para recibir tu pedido.</p>
+                <p className="text-text-secondary mb-12">Completá tus datos para recibir tu pedido.</p>
 
                 <form onSubmit={handleSubmit} className="space-y-12 animate-fade-in-up">
-                    {/* 1. Datos del Cliente */}
+
+                    {/* 0. Hora de Entrega */}
                     <section>
                         <h3 className="text-xl font-bold text-[#2C1B18] mb-6 flex items-center gap-3">
                             <span className="w-8 h-8 rounded-full bg-[#2C1B18] text-white flex items-center justify-center text-sm">1</span>
+                            Hora de Entrega
+                        </h3>
+
+                        {!isOpen && (
+                            <div className="mb-4 flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
+                                <Clock className="w-4 h-4 shrink-0 text-amber-600" />
+                                <span>Estamos cerrados ahora. Tu pedido llegará en el horario que elijas.</span>
+                            </div>
+                        )}
+
+                        <select
+                            required
+                            value={deliverySlot}
+                            onChange={(e) => setDeliverySlot(e.target.value)}
+                            className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] focus:bg-white transition-all rounded-t-lg appearance-none cursor-pointer"
+                        >
+                            <option value="" disabled>Elegí una franja horaria...</option>
+                            {availableSlots.map((slot) => (
+                                <option key={slot.value} value={slot.value}>{slot.label}</option>
+                            ))}
+                        </select>
+                    </section>
+
+                    {/* 1. Datos del Cliente */}
+                    <section>
+                        <h3 className="text-xl font-bold text-[#2C1B18] mb-6 flex items-center gap-3">
+                            <span className="w-8 h-8 rounded-full bg-[#2C1B18] text-white flex items-center justify-center text-sm">2</span>
                             Datos de Envío
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -223,7 +265,7 @@ export default function Checkout() {
                     {/* 2. Método de Pago */}
                     <section>
                         <h3 className="text-xl font-bold text-[#2C1B18] mb-6 flex items-center gap-3">
-                            <span className="w-8 h-8 rounded-full bg-[#2C1B18] text-white flex items-center justify-center text-sm">2</span>
+                            <span className="w-8 h-8 rounded-full bg-[#2C1B18] text-white flex items-center justify-center text-sm">3</span>
                             Forma de Pago
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
