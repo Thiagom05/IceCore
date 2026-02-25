@@ -46,7 +46,12 @@ export default function GustoFormModal({ isOpen, onClose, gustoToEdit, onSave })
             onClose();
         } catch (error) {
             console.error("Error guardando gusto:", error);
-            showError("Error al guardar. Verifica que el nombre no esté duplicado.");
+            // Mostramos el mensaje real del backend si está disponible
+            const serverMsg = error?.response?.data?.message || error?.response?.data || null;
+            const displayMsg = (typeof serverMsg === 'string' && serverMsg.length > 0)
+                ? serverMsg
+                : "Error al guardar. Verificá que el nombre no esté duplicado y que el backend esté disponible.";
+            showError(displayMsg);
         } finally {
             setLoading(false);
         }

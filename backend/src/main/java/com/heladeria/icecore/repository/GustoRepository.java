@@ -14,7 +14,7 @@ public interface GustoRepository extends JpaRepository<Gusto, Long> {
     // Buscar todos los gustos que tengan activo = true
     List<Gusto> findByActivoTrue();
 
-    // Podríamos agregar más si necesitamos:
-    // List<Gusto> findByCategoria(String categoria);
-    // List<Gusto> findByStockLessThan(int cantidad);
+    // Busca un gusto con el mismo nombre (ignorando mayúsculas) pero DIFERENTE id
+    // → Permite validar unicidad al editar sin colisionar con el propio registro
+    java.util.Optional<Gusto> findByNombreIgnoreCaseAndIdNot(String nombre, Long id);
 }

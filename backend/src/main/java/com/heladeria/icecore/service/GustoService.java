@@ -56,6 +56,13 @@ public class GustoService {
         Gusto gusto = gustoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Gusto no encontrado con id: " + id));
 
+        // Verificar que el nuevo nombre no esté en uso por OTRO gusto (ignorando
+        // mayúsculas)
+        gustoRepository.findByNombreIgnoreCaseAndIdNot(gustoDetails.getNombre(), id)
+                .ifPresent(duplicate -> {
+                    throw new RuntimeException("Ya existe un sabor con el nombre \"" + gustoDetails.getNombre() + "\"");
+                });
+
         gusto.setNombre(gustoDetails.getNombre());
         gusto.setDescripcion(gustoDetails.getDescripcion());
         gusto.setCategoria(gustoDetails.getCategoria());
