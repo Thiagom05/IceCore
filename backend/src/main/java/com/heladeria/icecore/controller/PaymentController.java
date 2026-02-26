@@ -20,7 +20,7 @@ import java.util.Map;
 @CrossOrigin("*")
 public class PaymentController {
 
-    @Value("${mercadopago.access_token}")
+    @Value("${MERCADOPAGO_ACCESS_TOKEN}")
     private String accessToken;
 
     @PostMapping("/create_preference")
