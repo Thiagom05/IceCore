@@ -38,10 +38,6 @@ public class Pedido {
     @JoinColumn(name = "repartidor_id")
     private Repartidor repartidor;
 
-    @ManyToOne
-    @JoinColumn(name = "delivery_round_id")
-    private DeliveryRound deliveryRound;
-
     // Fecha y hora automática
     private LocalDateTime fecha;
 
@@ -62,8 +58,5 @@ public class Pedido {
             this.estado = "PENDIENTE";
         }
     }
-
-    @OneToOne(mappedBy = "pedido", cascade = CascadeType.ALL)
-    private Invoice invoice;
 
 }

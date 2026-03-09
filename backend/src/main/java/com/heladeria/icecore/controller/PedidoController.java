@@ -17,7 +17,6 @@ public class PedidoController {
     @Autowired
     private PedidoService pedidoService;
 
-    // POST /api/pedidos -> Recibe el DTO complejo y crea el pedido
     @PostMapping
     public ResponseEntity<?> create(@RequestBody PedidoDTO pedidoDTO) {
         try {
@@ -36,10 +35,5 @@ public class PedidoController {
     @PatchMapping("/{id}/estado")
     public ResponseEntity<Pedido> updateEstado(@PathVariable Long id, @RequestParam String estado) {
         return ResponseEntity.ok(pedidoService.updateEstado(id, estado));
-    }
-
-    @PatchMapping("/{id}/repartidor")
-    public ResponseEntity<Pedido> updateRepartidor(@PathVariable Long id, @RequestParam String nombre) {
-        return ResponseEntity.ok(pedidoService.updateRepartidor(id, nombre));
     }
 }

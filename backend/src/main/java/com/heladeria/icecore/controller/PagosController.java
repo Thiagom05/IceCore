@@ -16,11 +16,11 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/api/pagos")
 @CrossOrigin("*")
-public class PaymentController {
+public class PagosController {
 
-    @Value("${MERCADOPAGO_ACCESS_TOKEN}")
+    @Value("${mercadopago.access_token}")
     private String accessToken;
 
     @PostMapping("/create_preference")
@@ -32,13 +32,10 @@ public class PaymentController {
             List<PreferenceItemRequest> preferenceItems = new ArrayList<>();
 
             for (Map<String, Object> item : items) {
-                // Parse item data from Frontend
-                // Structure: { product: { nombre: "..." }, price: 1000, gustos: [...] }
 
                 Map<String, Object> product = (Map<String, Object>) item.get("product");
                 String title = (String) product.get("nombre");
 
-                // Add gustos info to title if present
                 List<Map<String, Object>> gustos = (List<Map<String, Object>>) item.get("gustos");
                 if (gustos != null && !gustos.isEmpty()) {
                     title += " (Con gustos)";
@@ -65,7 +62,6 @@ public class PaymentController {
             PreferenceRequest preferenceRequest = PreferenceRequest.builder()
                     .items(preferenceItems)
                     .backUrls(backUrls)
-                    // .autoReturn("approved")
                     .build();
 
             PreferenceClient client = new PreferenceClient();

@@ -4,8 +4,6 @@ import api from '../../lib/api';
 import { LogOut, Plus, Search, CheckCircle, XCircle, Edit2, IceCream, Package, ShoppingBag, Truck, Calendar, Clock, DollarSign, User, MapPin } from 'lucide-react';
 import GustoFormModal from './GustoFormModal';
 import ProductFormModal from './ProductFormModal';
-import DeliveryManager from './DeliveryManager';
-import BillingConfig from './BillingConfig';
 import { defaultGustos, defaultProducts } from '../../data/defaultCatalog';
 
 import { useUI } from '../../context/UIContext';
@@ -360,7 +358,7 @@ export default function Dashboard() {
                         </div>
                         <button
                             onClick={logout}
-                            className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                            className="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-text-secondary hover:text-red-500 hover:bg-red-50 rounded-lg transition cursor-pointer"
                         >
                             <LogOut size={16} /> Salir
                         </button>
@@ -371,11 +369,9 @@ export default function Dashboard() {
             <div className="max-w-7xl mx-auto py-10 px-6">
 
                 {/* Tabs Navigation */}
-                <div className="flex flex-wrap gap-4 mb-10 justify-center">
+                <div className="flex flex-wrap gap-4 mb-10 justify-center ">
                     <TabButton id="gustos" icon={IceCream} label="Sabores" />
                     <TabButton id="productos" icon={Package} label="Productos" />
-                    <TabButton id="reparto" icon={Truck} label="Reparto" />
-                    <TabButton id="facturacion" icon={DollarSign} label="Facturación" />
                     <TabButton id="horarios" icon={Clock} label="Horarios" />
                     <TabButton id="pedidos" icon={ShoppingBag} label="Pedidos" liveCount={activeTab !== 'pedidos'} />
                 </div>
@@ -399,7 +395,7 @@ export default function Dashboard() {
                                 <button onClick={handleImportDefaults} className="bg-white border border-gray-200 text-[#2C1B18] hover:bg-gray-50 px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition cursor-pointer">
                                     <IceCream size={18} /> Cargar Defaults
                                 </button>
-                                <button onClick={handleCreateGusto} className="bg-[#2C1B18] hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#2C1B18]/20 flex items-center gap-2 transition hover:scale-105 active:scale-95 cursor-pointer">
+                                <button onClick={handleCreateGusto} className="bg-[#2C1B18] hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#2C1B18]/20 flex items-center gap-2 transition cursor-pointer">
                                     <Plus size={18} /> Nuevo Sabor
                                 </button>
                             </div>
@@ -500,21 +496,6 @@ export default function Dashboard() {
                         </div>
                     </div>
                 )}
-
-                {/* CONTENIDO TAB REPARTO */}
-                {activeTab === 'reparto' && (
-                    <div className="animate-fade-in-up">
-                        <DeliveryManager />
-                    </div>
-                )}
-
-                {/* CONTENIDO TAB FACTURACION */}
-                {activeTab === 'facturacion' && (
-                    <div className="animate-fade-in-up">
-                        <BillingConfig />
-                    </div>
-                )}
-
                 {/* CONTENIDO TAB HORARIOS */}
                 {activeTab === 'horarios' && (
                     <div className="animate-fade-in-up max-w-2xl mx-auto">

@@ -11,7 +11,6 @@ import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import LoginPage from './pages/admin/LoginPage';
 import Dashboard from './pages/admin/Dashboard';
-import BillingConfig from './pages/admin/BillingConfig';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import { Instagram, MapPin } from 'lucide-react';
@@ -83,7 +82,6 @@ function App() {
                 <Route path="/admin/login" element={<LoginPage />} />
                 <Route element={<ProtectedRoute />}>
                   <Route path="/admin/dashboard" element={<Dashboard />} />
-                  <Route path="/admin/facturacion" element={<BillingConfig />} />
                   {/* Redirección por defecto admin */}
                   <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
                 </Route>
