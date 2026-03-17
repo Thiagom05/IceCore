@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import api from '../lib/api';
-import { defaultGustos } from '../data/defaultCatalog';
+import api from '../../lib/api';
+import { defaultGustos } from '../../data/defaultCatalog';
 import { Sparkles, Snowflake } from 'lucide-react';
 
 export default function Catalog() {

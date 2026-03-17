@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import api from '../lib/api';
-import { useCart } from '../context/CartContext';
-import { useUI } from '../context/UIContext';
+import api from '../../lib/api';
+import { useCart } from '../../context/CartContext';
+import { useUI } from '../../context/UIContext';
 import { ChevronRight, Check, Plus, Minus, Clock } from 'lucide-react';
-import { useBusinessHours } from '../hooks/HorariosPedidos';
+import { useBusinessHours } from '../../hooks/HorariosPedidos';
 
 export default function Order() {
     const { addToCart, products: tiposProducto, gustos, catalogLoading } = useCart();

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useCart } from '../context/CartContext';
+import { useCart } from '../../context/CartContext';
 import { useNavigate } from 'react-router-dom';
-import api from '../lib/api';
+import api from '../../lib/api';
 import { CreditCard, Banknote, Landmark, Loader2, ArrowLeft, Clock } from 'lucide-react';
-import { useUI } from '../context/UIContext';
-import { useBusinessHours } from '../hooks/HorariosPedidos';
+import { useUI } from '../../context/UIContext';
+import { useBusinessHours } from '../../hooks/HorariosPedidos';
 
 // ─── Componentes fuera del padre para evitar re-mount en cada re-render ────────
 
