@@ -37,6 +37,7 @@ public class GustoController {
         return ResponseEntity.ok(gustoService.toggleActive(id));
     }
 
+    @PutMapping("/{id}/stock")
     public ResponseEntity<Gusto> toggleStock(@PathVariable Long id) {
         return ResponseEntity.ok(gustoService.toggleStock(id));
     }

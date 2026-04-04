@@ -102,7 +102,9 @@ export default function Checkout() {
 
         setLoading(true);
         try {
-            const res = await api.post('/payments/create_preference', cart);
+            await saveOrder('mercadopago');
+            const res = await api.post('/pagos/create_preference', cart);
+            clearCart();
             window.location.href = res.data.init_point;
         } catch (error) {
             console.error(error);

@@ -14,14 +14,11 @@ public class DataInitializer {
     @Bean
     public CommandLineRunner initData(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
         return args -> {
-            // Verificar si existe el admin, si no, crearlo
-            if (usuarioRepository.findByUsername("puravida").isEmpty()) {
-                Usuario admin = new Usuario();
-                admin.setUsername("puravida");
-                admin.setPassword(passwordEncoder.encode("puravida2026"));
-                admin.setRole("ADMIN");
-                usuarioRepository.save(admin);
-            }
+            Usuario admin = usuarioRepository.findByUsername("puravida").orElse(new Usuario());
+            admin.setUsername("puravida");
+            admin.setPassword(passwordEncoder.encode("puravida2026"));
+            admin.setRole("ADMIN");
+            usuarioRepository.save(admin);
         };
     }
 }

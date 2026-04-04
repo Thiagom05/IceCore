@@ -39,7 +39,7 @@ export function useBusinessHours() {
     useEffect(() => {
         // Cargar horarios desde el backend
         import('../lib/api').then(module => {
-            module.default.get('/business-hours')
+            module.default.get('/horarios')
                 .then(res => setHours(res.data))
                 .catch(() => { /* usa defaults */ });
         });

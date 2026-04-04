@@ -30,12 +30,9 @@ public class PedidoService {
     @Autowired
     private GustoRepository gustoRepository;
 
-    // @Transactional: Asegura que si algo falla a mitad de camino, NO se guarde
-    // nada en la BD (rollback).
     @Transactional
     public Pedido crearPedido(PedidoDTO pedidoDTO) {
 
-        // 1. Creamos el objeto Pedido vacío
         Pedido pedido = new Pedido();
         pedido.setNombreCliente(pedidoDTO.getNombreCliente());
         pedido.setApellidoCliente(pedidoDTO.getApellidoCliente());
@@ -47,13 +44,12 @@ public class PedidoService {
         BigDecimal total = BigDecimal.ZERO;
         List<ItemPedido> items = new ArrayList<>();
 
-        // 2. Recorremos los ítems que nos mandaron (los potes)
         for (ItemPedidoDTO itemDTO : pedidoDTO.getItems()) {
 
-            // Buscamos el tipo de producto en la BD
             TipoProducto tipo = tipoProductoRepository.findById(itemDTO.getTipoProductoId())
                     .orElseThrow(() -> new RuntimeException("Tipo de producto no encontrado"));
 
+            // Validacion de cantidad minima para porciones
             if (!tipo.getEsPorPeso()) {
                 if (itemDTO.getCantidad() < 5) {
                     throw new RuntimeException("Error: El producto " + tipo.getNombre()
@@ -68,19 +64,14 @@ public class PedidoService {
                         + " solo permite " + tipo.getMaxGustos() + " gustos.");
             }
 
-            // Buscamos todos los gustos elgidos en la BD
             List<Gusto> gustos = gustoRepository.findAllById(itemDTO.getGustoIds());
 
-            // Validamos que existan todos
             if (gustos.size() != itemDTO.getGustoIds().size()) {
                 throw new RuntimeException("Error: Uno o más gustos no existen.");
             }
 
-            // (Opcional) Validar stock o si están activos aquí
-
-            // Creamos el ItemPedido real
             ItemPedido item = new ItemPedido();
-            item.setPedido(pedido); // Vinculamos con el padre
+            item.setPedido(pedido);
             item.setTipoProducto(tipo);
             item.setGustos(gustos);
             item.setCantidad(itemDTO.getCantidad());
@@ -93,27 +84,27 @@ public class PedidoService {
             total = total.add(subtotal); // Sumamos al total general
         }
 
-        // --- VALIDACIONES GLOBALES DE CANTIDAD (Al final, con todos los items
-        // procesados) ---
+        // --- VALIDACIONES GLOBALES DE CANTIDAD ---
         long totalCuartoKilo = items.stream()
                 .filter(i -> {
                     String nombre = i.getTipoProducto().getNombre().trim();
-                    boolean esCuarto = "1/4 KILO".equalsIgnoreCase(nombre) || "1/4 Kilo".equalsIgnoreCase(nombre);
-                    return esCuarto;
+                    return "1/4 KILO".equalsIgnoreCase(nombre) || "1/4 Kilo".equalsIgnoreCase(nombre);
                 })
                 .mapToInt(ItemPedido::getCantidad)
                 .sum();
 
-        if (totalCuartoKilo > 0 && totalCuartoKilo < 2) {
-            throw new RuntimeException("Error: El 1/4 Kilo requiere una compra mínima de 2 unidades en total (tienes "
-                    + totalCuartoKilo + ").");
+        int totalProductos = items.stream()
+                .mapToInt(ItemPedido::getCantidad)
+                .sum();
+
+        if (totalProductos == 1 && totalCuartoKilo == 1) {
+            throw new RuntimeException(
+                    "Error: No se puede realizar un pedido de un único 1/4 Kilo. Debes agregar más productos.");
         }
 
-        // 3. Asignamos los items y el precio total al pedido
         pedido.setItems(items);
         pedido.setPrecioTotal(total);
 
-        // 4. Guardamos todo en la BD
         return pedidoRepository.save(pedido);
     }
 
@@ -132,9 +123,6 @@ public class PedidoService {
     private com.heladeria.icecore.auth.repository.RepartidorRepository repartidorRepository;
 
     public com.heladeria.icecore.auth.entity.Repartidor findRepartidorByName(String nombre) {
-        // Implement logic to find repartidor by name if needed, or change
-        // updateRepartidor logic
-        // For simplicity, let's assume updateRepartidor now takes ID or we find by name
         return repartidorRepository.findAll().stream()
                 .filter(r -> r.getNombre().equalsIgnoreCase(nombre))
                 .findFirst()
@@ -148,7 +136,6 @@ public class PedidoService {
         if (nombreRepartidor != null && !nombreRepartidor.isEmpty()) {
             com.heladeria.icecore.auth.entity.Repartidor rep = findRepartidorByName(nombreRepartidor);
             if (rep == null) {
-                // If not found, maybe create or throw? For now, throw.
                 throw new RuntimeException("Repartidor no encontrado: " + nombreRepartidor);
             }
             pedido.setRepartidor(rep);

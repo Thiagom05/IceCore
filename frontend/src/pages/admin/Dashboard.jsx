@@ -4,7 +4,6 @@ import api from '../../lib/api';
 import { LogOut, Plus, Search, CheckCircle, XCircle, Edit2, IceCream, Package, ShoppingBag, Truck, Calendar, Clock, DollarSign, User, MapPin } from 'lucide-react';
 import GustoFormModal from './GustoFormModal';
 import ProductFormModal from './ProductFormModal';
-import { defaultGustos, defaultProducts } from '../../data/defaultCatalog';
 
 import { useUI } from '../../context/UIContext';
 
@@ -16,8 +15,8 @@ export default function Dashboard() {
     const [gustos, setGustos] = useState([]);
     const [productos, setProductos] = useState([]);
     const [pedidos, setPedidos] = useState([]);
-    const [businessHours, setBusinessHours] = useState(null);
-    const [savingHours, setSavingHours] = useState(false);
+    const [Horarios, setHorarios] = useState(null);
+    const [salvarHorarios, setSalvarHorarios] = useState(false);
 
     // UI State
     const [loading, setLoading] = useState(true);
@@ -46,7 +45,7 @@ export default function Dashboard() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            await Promise.all([fetchGustos(), fetchProductos(), fetchPedidos(), fetchBusinessHours()]);
+            await Promise.all([fetchGustos(), fetchProductos(), fetchPedidos(), fetchHorarios()]);
         } catch (error) {
             console.error("Error cargando datos:", error);
         } finally {
@@ -67,26 +66,26 @@ export default function Dashboard() {
         setProductos(res.data.sort((a, b) => a.precio - b.precio));
     };
 
-    const fetchBusinessHours = async () => {
+    const fetchHorarios = async () => {
         try {
-            const res = await api.get('/business-hours');
-            setBusinessHours(res.data);
+            const res = await api.get('/horarios');
+            setHorarios(res.data);
         } catch (error) {
             console.warn("No se pudieron cargar los horarios.");
         }
     };
 
-    const saveBusinessHours = async () => {
-        if (!businessHours) return;
-        setSavingHours(true);
+    const saveHorarios = async () => {
+        if (!Horarios) return;
+        setSalvarHorarios(true);
         try {
-            await api.put('/business-hours', businessHours);
+            await api.put('/horarios', Horarios);
             showError("Horarios guardados correctamente.", "✅ Guardado");
         } catch (error) {
             console.error("Error guardando horarios:", error);
             showError("No se pudieron guardar los horarios.");
         } finally {
-            setSavingHours(false);
+            setSalvarHorarios(false);
         }
     };
 
@@ -101,6 +100,38 @@ export default function Dashboard() {
     const timeStrToMins = (str) => {
         const [h, m] = str.split(':').map(Number);
         return h * 60 + m;
+    };
+
+    // Helper para dar formato relativo (Hoy / Mañana) a la hora de entrega
+    const formatDeliveryTime = (pedido) => {
+        if (!pedido.horaEntrega) return "";
+        let str = pedido.horaEntrega;
+
+        const fechaPedido = new Date(pedido.fecha);
+        fechaPedido.setHours(0, 0, 0, 0);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        const diffTime = hoy.getTime() - fechaPedido.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+            // El pedido se hizo ayer
+            if (str.toLowerCase().includes("mañana")) return str.replace(/Mañana/i, "Hoy");
+            if (str.toLowerCase().includes("hoy")) return str.replace(/Hoy/i, "Ayer");
+        } else if (diffDays > 1) {
+            // El pedido tiene más de 1 día
+            const partes = str.split(" a las ");
+            if (partes.length > 1) {
+                let fechaReal = new Date(fechaPedido);
+                if (str.toLowerCase().includes("mañana")) {
+                    fechaReal.setDate(fechaReal.getDate() + 1);
+                }
+                return fechaReal.toLocaleDateString('es-AR') + " a las " + partes[1];
+            }
+        }
+
+        return str;
     };
 
     // Helper para agrupar pedidos por fecha
@@ -164,86 +195,6 @@ export default function Dashboard() {
         } catch (error) {
             console.error("Error cambiando visibilidad:", error);
             fetchGustos();
-        }
-    };
-
-    const handleImportDefaults = async () => {
-        if (!window.confirm("¿Deseas importar los sabores por defecto a la base de datos? Esto solo agregará los que falten.")) return;
-
-        setLoading(true);
-        try {
-            // Obtener nombres existentes para no duplicar
-            const existingNames = new Set(gustos.map(g => g.nombre.toLowerCase().trim()));
-
-            const toImport = defaultGustos.filter(def =>
-                !existingNames.has(def.nombre.toLowerCase().trim())
-            );
-
-            if (toImport.length === 0) {
-                showError("Todos los sabores por defecto ya existen en la base de datos.", "Información");
-                setLoading(false);
-                return;
-            }
-
-            // Subir uno por uno (o batch si el backend soportara, haremos loop por compatibilidad)
-            let count = 0;
-            for (const gusto of toImport) {
-                // Adaptar objeto al formato del backend (sin ID)
-                const payload = {
-                    nombre: gusto.nombre,
-                    descripcion: gusto.descripcion || "",
-                    categoria: gusto.categoria,
-                    hayStock: gusto.hayStock,
-                    activo: true
-                };
-                await api.post('/gustos', payload);
-                count++;
-            }
-
-            showError(`¡Éxito! Se importaron ${count} sabores nuevos.`, "Importación Completada");
-            fetchGustos(); // Recargar tabla
-        } catch (error) {
-            console.error("Error importando defaults:", error);
-            showError("Hubo un error al importar algunos sabores.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleImportProductsDefaults = async () => {
-        if (!window.confirm("¿Deseas importar los productos por defecto?")) return;
-
-        setLoading(true);
-        try {
-            const existingNames = new Set(productos.map(p => p.nombre.toLowerCase().trim()));
-            const toImport = defaultProducts.filter(def =>
-                !existingNames.has(def.nombre.toLowerCase().trim())
-            );
-
-            if (toImport.length === 0) {
-                showError("Todos los productos por defecto ya existen.", "Información");
-                setLoading(false);
-                return;
-            }
-
-            let count = 0;
-            for (const prod of toImport) {
-                const payload = {
-                    nombre: prod.nombre,
-                    precio: prod.precio,
-                    maxGustos: prod.maxGustos,
-                    esPorPeso: prod.esPorPeso
-                };
-                await api.post('/tipos-producto', payload);
-                count++;
-            }
-            showError(`¡Éxito! Se importaron ${count} productos nuevos.`, "Importación Completada");
-            fetchProductos();
-        } catch (error) {
-            console.error("Error importando productos:", error);
-            showError("Error al importar productos.");
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -392,9 +343,6 @@ export default function Dashboard() {
                                         className="pl-10 pr-4 py-3 border-none bg-white rounded-xl shadow-sm focus:ring-2 focus:ring-[#2C1B18]/10 w-full text-sm font-medium"
                                     />
                                 </div>
-                                <button onClick={handleImportDefaults} className="bg-white border border-gray-200 text-[#2C1B18] hover:bg-gray-50 px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition cursor-pointer">
-                                    <IceCream size={18} /> Cargar Defaults
-                                </button>
                                 <button onClick={handleCreateGusto} className="bg-[#2C1B18] hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#2C1B18]/20 flex items-center gap-2 transition cursor-pointer">
                                     <Plus size={18} /> Nuevo Sabor
                                 </button>
@@ -458,9 +406,6 @@ export default function Dashboard() {
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                             <h2 className="text-3xl font-bold text-[#2C1B18]">Precios y Formatos</h2>
                             <div className="flex gap-3">
-                                <button onClick={handleImportProductsDefaults} className="bg-white border border-gray-200 text-[#2C1B18] hover:bg-gray-50 px-4 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition cursor-pointer">
-                                    <Package size={18} /> Cargar Defaults
-                                </button>
                                 <button onClick={handleCreateProduct} className="bg-[#2C1B18] hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#2C1B18]/20 flex items-center gap-2 transition hover:scale-105 active:scale-95 cursor-pointer">
                                     <Plus size={18} /> Nuevo Producto
                                 </button>
@@ -502,7 +447,7 @@ export default function Dashboard() {
                         <h2 className="text-3xl font-bold text-[#2C1B18] mb-2">Horarios de Atención</h2>
                         <p className="text-text-secondary text-sm mb-8">Configurá los turnos de la heladería. Los clientes solo podrán elegir slots dentro de estos horarios.</p>
 
-                        {businessHours ? (
+                        {Horarios ? (
                             <div className="bg-white rounded-2xl shadow-xl shadow-[#2C1B18]/5 border border-gray-100 p-8 space-y-8">
 
                                 {/* Turno 1 */}
@@ -513,8 +458,8 @@ export default function Dashboard() {
                                             <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">Apertura</label>
                                             <input
                                                 type="time"
-                                                value={minsToTimeStr(businessHours.aperturaT1)}
-                                                onChange={(e) => setBusinessHours({ ...businessHours, aperturaT1: timeStrToMins(e.target.value) })}
+                                                value={minsToTimeStr(Horarios.aperturaT1)}
+                                                onChange={(e) => setHorarios({ ...Horarios, aperturaT1: timeStrToMins(e.target.value) })}
                                                 className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] rounded-t-lg"
                                             />
                                         </div>
@@ -522,8 +467,8 @@ export default function Dashboard() {
                                             <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">Cierre</label>
                                             <input
                                                 type="time"
-                                                value={minsToTimeStr(businessHours.cierreT1)}
-                                                onChange={(e) => setBusinessHours({ ...businessHours, cierreT1: timeStrToMins(e.target.value) })}
+                                                value={minsToTimeStr(Horarios.cierreT1)}
+                                                onChange={(e) => setHorarios({ ...Horarios, cierreT1: timeStrToMins(e.target.value) })}
                                                 className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] rounded-t-lg"
                                             />
                                         </div>
@@ -538,8 +483,8 @@ export default function Dashboard() {
                                             <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">Apertura</label>
                                             <input
                                                 type="time"
-                                                value={minsToTimeStr(businessHours.aperturaT2)}
-                                                onChange={(e) => setBusinessHours({ ...businessHours, aperturaT2: timeStrToMins(e.target.value) })}
+                                                value={minsToTimeStr(Horarios.aperturaT2)}
+                                                onChange={(e) => setHorarios({ ...Horarios, aperturaT2: timeStrToMins(e.target.value) })}
                                                 className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] rounded-t-lg"
                                             />
                                         </div>
@@ -547,11 +492,11 @@ export default function Dashboard() {
                                             <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary mb-2">Cierre</label>
                                             <input
                                                 type="time"
-                                                value={minsToTimeStr(businessHours.cierreT2 % 1440 === 0 ? 0 : businessHours.cierreT2)}
+                                                value={minsToTimeStr(Horarios.cierreT2 % 1440 === 0 ? 0 : Horarios.cierreT2)}
                                                 onChange={(e) => {
                                                     const mins = timeStrToMins(e.target.value);
                                                     // Si el cierre es medianoche (00:00) lo guardamos como 1440
-                                                    setBusinessHours({ ...businessHours, cierreT2: mins === 0 ? 1440 : mins });
+                                                    setHorarios({ ...Horarios, cierreT2: mins === 0 ? 1440 : mins });
                                                 }}
                                                 className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] rounded-t-lg"
                                             />
@@ -564,8 +509,8 @@ export default function Dashboard() {
                                 <div>
                                     <h3 className="text-sm font-bold uppercase tracking-widest text-text-secondary mb-4">Intervalo entre Slots</h3>
                                     <select
-                                        value={businessHours.intervaloMinutos}
-                                        onChange={(e) => setBusinessHours({ ...businessHours, intervaloMinutos: parseInt(e.target.value) })}
+                                        value={Horarios.intervaloMinutos}
+                                        onChange={(e) => setHorarios({ ...Horarios, intervaloMinutos: parseInt(e.target.value) })}
                                         className="w-full bg-gray-50 border-b-2 border-gray-100 px-4 py-3 text-[#2C1B18] font-bold focus:outline-none focus:border-[#2C1B18] rounded-t-lg"
                                     >
                                         <option value={15}>Cada 15 minutos</option>
@@ -575,11 +520,11 @@ export default function Dashboard() {
                                 </div>
 
                                 <button
-                                    onClick={saveBusinessHours}
-                                    disabled={savingHours}
+                                    onClick={saveHorarios}
+                                    disabled={salvarHorarios}
                                     className="w-full py-4 bg-[#2C1B18] text-white font-bold rounded-xl hover:bg-black hover:scale-[1.01] transition-all shadow-lg shadow-[#2C1B18]/20 cursor-pointer disabled:opacity-70"
                                 >
-                                    {savingHours ? 'Guardando...' : 'Guardar Horarios'}
+                                    {salvarHorarios ? 'Guardando...' : 'Guardar Horarios'}
                                 </button>
                             </div>
                         ) : (
@@ -641,10 +586,16 @@ export default function Dashboard() {
                                                                 <Clock size={12} />
                                                                 Pedido: {new Date(pedido.fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                                                             </div>
-                                                            {pedido.horaEntrega && (
+                                                            {pedido.horaEntrega && pedido.estado !== 'ENTREGADO' && pedido.estado !== 'CANCELADO' && (
                                                                 <div className="flex items-center gap-2 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg mt-1 w-fit">
                                                                     <Clock size={11} />
-                                                                    Entrega: {pedido.horaEntrega}
+                                                                    Entrega Programada: {formatDeliveryTime(pedido)}
+                                                                </div>
+                                                            )}
+                                                            {pedido.estado === 'ENTREGADO' && (
+                                                                <div className="flex items-center gap-2 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-lg mt-1 w-fit">
+                                                                    <CheckCircle size={11} />
+                                                                    Pedido Entregado Exitosamente
                                                                 </div>
                                                             )}
                                                         </div>

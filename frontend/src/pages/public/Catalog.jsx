@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
-import { defaultGustos } from '../../data/defaultCatalog';
 import { Sparkles, Snowflake } from 'lucide-react';
 
 export default function Catalog() {
-    const [gustos, setGustos] = useState(defaultGustos); // datos inmediatos mientras carga el backend
+    const [gustos, setGustos] = useState([]); // datos inmediatos mientras carga el backend
     const [loading, setLoading] = useState(false); // sin spinner inicial
 
     useEffect(() => {

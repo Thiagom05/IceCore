@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { defaultProducts, defaultGustos } from '../data/defaultCatalog';
 
 const CartContext = createContext();
 
@@ -50,14 +49,11 @@ export const CartProvider = ({ children }) => {
     const cartCount = cart.length;
 
     // --- CATALOGO CACHEADO ---
-    // Inicializamos con el catálogo estático para "Zero Latency"
-    const [products, setProducts] = useState(defaultProducts);
-    const [gustos, setGustos] = useState(defaultGustos);
-    const [catalogLoading, setCatalogLoading] = useState(false); // Ya no cargamos, mostramos lo estático de una
+    const [products, setProducts] = useState([]);
+    const [gustos, setGustos] = useState([]);
+    const [catalogLoading, setCatalogLoading] = useState(true);
 
     const fetchCatalog = async () => {
-        // No bloqueamos la UI — la actualización ocurre en segundo plano.
-        // Los defaultGustos ya están en el state como pantalla inicial inmediata.
         try {
             const now = Date.now();
             const CACHE_DURATION = 5 * 1000; // 5 segundos (para reflejar cambios de stock del admin)
@@ -74,6 +70,7 @@ export const CartProvider = ({ children }) => {
                     console.log("Catálogo en caché (5 min) ⚡");
                     setProducts(parsedProducts);
                     setGustos(parsedGustos);
+                    setCatalogLoading(false);
                     return;
                 }
             }
@@ -85,13 +82,13 @@ export const CartProvider = ({ children }) => {
                 import('../lib/api').then(module => module.default.get('/gustos/activos'))
             ]);
 
-            // Usar datos de la API directamente (sin merge con defaults para evitar duplicados).
-            // Los defaults solo sirven como pantalla inicial; la API es la fuente de verdad.
-            const apiProducts = tiposRes.data?.length > 0 ? tiposRes.data : defaultProducts;
-            const apiGustos = gustosRes.data?.length > 0 ? gustosRes.data : defaultGustos;
+            // La API es la fuente de verdad.
+            const apiProducts = tiposRes.data?.length > 0 ? tiposRes.data : [];
+            const apiGustos = gustosRes.data?.length > 0 ? gustosRes.data : [];
 
             setProducts(apiProducts);
             setGustos(apiGustos);
+            setCatalogLoading(false);
 
             // Guardar en caché
             localStorage.setItem('icecore_products', JSON.stringify(apiProducts));
@@ -99,14 +96,14 @@ export const CartProvider = ({ children }) => {
             localStorage.setItem('icecore_catalog_time', now.toString());
 
         } catch (error) {
-            console.warn("No se pudo actualizar el catálogo. Usando versión en caché/estática.", error);
-            // Si hay algo en caché (aunque viejo), usarlo como fallback
+            console.warn("No se pudo actualizar el catálogo. Usando versión en caché.", error);
             try {
                 const cachedGustos = localStorage.getItem('icecore_gustos');
                 const cachedProducts = localStorage.getItem('icecore_products');
                 if (cachedGustos) setGustos(JSON.parse(cachedGustos));
                 if (cachedProducts) setProducts(JSON.parse(cachedProducts));
             } catch (_) { /* Silencioso */ }
+            setCatalogLoading(false);
         }
     };
 
@@ -116,7 +113,7 @@ export const CartProvider = ({ children }) => {
     }, []);
 
     // Auto-Corrección de IDs del Carrito (Sync Cart with Fresh Catalog)
-    // Si el usuario tenía items con IDs viejos (del defaultCatalog) y ahora tenemos IDs nuevos (de la DB),
+    // Si el usuario tenía items con IDs viejos y ahora tenemos IDs nuevos (de la DB),
     // intentamos matchear por NOMBRE y actualizar los IDs en el carrito automáticamente.
     useEffect(() => {
         if (products.length === 0 && gustos.length === 0) return;

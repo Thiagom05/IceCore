@@ -15,11 +15,12 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         // Verificar si hay credenciales guardadas al cargar
-        const storedAuth = localStorage.getItem('icecore_auth');
-        if (storedAuth) {
-            const { username, password } = JSON.parse(storedAuth);
-            // Configurar el header globalmente para axios
-            api.defaults.headers.common['Authorization'] = 'Basic ' + btoa(username + ':' + password);
+        const token = localStorage.getItem('icecore_jwt');
+        const userData = localStorage.getItem('icecore_user');
+        if (token && userData) {
+            const { username } = JSON.parse(userData);
+            // Configurar el header globalmente para axios usando Bearer Token
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             setUser({ username });
         }
         setLoading(false);
@@ -27,17 +28,15 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
-            // Intentar hacer una petición autenticada para verificar credenciales
-            const basicAuth = 'Basic ' + btoa(username + ':' + password);
+            // Intentar hacer una petición al nuevo backend JWT
+            const response = await api.post('/auth/login', { username, password });
+            const { token } = response.data;
 
-            // Usamos una instancia temporal o configuramos el header para probar
-            await api.get('/auth/check', {
-                headers: { 'Authorization': basicAuth }
-            });
-
-            // Si es exitoso, guardamos
-            localStorage.setItem('icecore_auth', JSON.stringify({ username, password }));
-            api.defaults.headers.common['Authorization'] = basicAuth;
+            // Si es exitoso, guardamos el Token y NO la contraseña en texto plano
+            localStorage.setItem('icecore_jwt', token);
+            localStorage.setItem('icecore_user', JSON.stringify({ username }));
+            
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             setUser({ username });
             return { success: true };
         } catch (error) {
@@ -45,7 +44,7 @@ export const AuthProvider = ({ children }) => {
             let msg = 'Credenciales incorrectas';
             if (error.response) {
                 if (error.response.status === 404) msg = 'Error 404: El servicio de login no responde. (Reinicie Backend)';
-                else if (error.response.status === 401) msg = 'Usuario o contraseña incorrectos';
+                else if (error.response.status === 401 || error.response.status === 403) msg = 'Usuario o contraseña incorrectos';
                 else msg = `Error ${error.response.status}: ${error.response.statusText}`;
             } else if (error.request) {
                 msg = 'No hay respuesta del servidor. Verifique que el Backend esté corriendo.';
@@ -55,7 +54,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
-        localStorage.removeItem('icecore_auth');
+        localStorage.removeItem('icecore_jwt');
+        localStorage.removeItem('icecore_user');
         delete api.defaults.headers.common['Authorization'];
         setUser(null);
     };
