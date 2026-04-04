@@ -18,12 +18,24 @@ IceCore es una solución completa de comercio electrónico diseñada específica
 
 ---
 
+## Novedades en v1.0.1
+
+Esta versión formaliza el paso a producción con mejoras críticas de seguridad y transaccionalidad:
+
+**Lo que sumamos y mejoramos:**
+*   **Flujo de Pago Transaccional:** Ahora los pedidos se persisten de forma segura en la base de datos de PostgreSQL *antes* de derivar al usuario a Mercado Pago, garantizando cero pérdida de datos ante desconexiones.
+*   **Validación Estricta en el Checkout:** Nueva lógica de negocio que bloquea carritos inconsistentes (ej. superación del límite estricto de gustos para pote de 1/4 kg).
+*   **Seguridad JWT Reforzada:** Implementación completa del filtro `JwtAuthFilter` y securización total de las rutas de la API, separando férreamente rutas públicas (catálogo) de privadas (admin, checkout).
+*   **Gestión de Tiempos Perfeccionada:** El Dashboard de Administrador ahora calcula y muestra fechas relativas dinámicas para pedidos actuales e históricos.
+
+---
+
 ## Stack Tecnológico
 
 ### Frontend
 Desarrollado con enfoque en rendimiento y experiencia de usuario (UX/UI).
 *   **Framework:** [React 19](https://react.dev/) montado sobre [Vite](https://vitejs.dev/) para un Hot-Module-Replacement ultra rápido.
-*   **Gestión de Estado y UX Avanzada:** Técnicas de **Optimistic UI (Carga de Latencia Cero)** implementadas mediante Context API para presentar el catálogo estático instantáneamente mitigando Cold Starts del backend, y sincronizando el `localStorage` en segundo plano.
+*   **Gestión de Estado Centralizada:** Manejo del estado global con Context API (`CartContext`), incorporando lógica de validación dura de negocio en tiempo real (límites de unidades, capacidad máxima por formato) sincronizada de forma robusta localmente.
 *   **Estilos:** [Tailwind CSS v4](https://tailwindcss.com/) / Vanilla CSS.
 *   **Enrutamiento:** `react-router-dom` v7 para navegación sin recarga de página.
 *   **Llamadas a la API:** `axios` configurado con interceptores para manejo centralizado de errores.
@@ -32,7 +44,7 @@ Desarrollado con enfoque en rendimiento y experiencia de usuario (UX/UI).
 Arquitectura en capas (Controller, Service, Repository) fuertemente tipada y escalable.
 *   **Lenguaje & Framework:** Java 21 + [Spring Boot 3](https://spring.io/projects/spring-boot).
 *   **Persistencia:** Spring Data JPA (Hibernate) conectado a **PostgreSQL**.
-*   **Seguridad:** Spring Security + `jjwt` para autenticación sin estado (Stateless).
+*   **Seguridad:** Spring Boot Security 6 con filtro custom `JwtAuthFilter`. Arquitectura de autenticación 100% *stateless* para blindar endpoints críticos, validación estricta de roles, y protección sólida del flujo de pagos y panel de control.
 *   **Pasarela de Pago:** `mercadopago-sdk-java` para orquestación de pagos.
 *   **Herramientas adicionales:** Lombok para reducción de boilerplate y Maven como gestor de dependencias.
 
